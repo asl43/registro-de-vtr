@@ -1,1179 +1,1260 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Mapa da Força — Controle de Unidades</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-  <style>
-    :root{--bg:#0f1724;--card:#0b1220;--accent:#06b6d4;--muted:#94a3b8;--glass:rgba(255,255,255,0.04);--success:#10b981;--warning:#f59e0b;--danger:#ef4444}
-    *{box-sizing:border-box;font-family:Inter,Segoe UI,Roboto,system-ui,-apple-system,Helvetica,Arial}
-    body{margin:0;background:linear-gradient(180deg,#06202a 0%,#071425 100%);color:#e6eef6;min-height:100vh;padding:24px}
-    .app{width:100%;max-width:1400px;margin:0 auto}
-    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px}
-    h1{font-size:20px;margin:0}
-    h2{font-size:18px;margin:12px 0 8px}
-    h3{font-size:15px;margin:8px 0;color:var(--accent)}
-    .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 20px rgba(2,6,23,0.6);margin-bottom:14px}
-    
-    label{font-size:13px;color:var(--muted);display:block;margin-bottom:4px}
-    input[type=text],input[type=datetime-local],select,input[type=tel],textarea{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:var(--glass);color:inherit;font-size:14px}
-    textarea{resize:vertical;min-height:80px}
-    
-    .row{display:flex;gap:12px;margin-bottom:12px}
-    .col{flex:1}
-    .col-auto{flex:0 0 auto}
-    
-    button{background:var(--accent);border:none;padding:10px 14px;border-radius:8px;color:#022;cursor:pointer;font-weight:600;font-size:13px;transition:opacity 0.2s}
-    button:hover{opacity:0.9}
-    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.1);color:var(--muted)}
-    button.danger{background:var(--danger);color:white}
-    button.success{background:var(--success);color:white}
-    button.small{padding:6px 10px;font-size:12px}
-    
-    .multi-select{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;max-height:300px;overflow-y:auto;padding:12px;background:var(--glass);border-radius:8px}
-    .unit-checkbox{display:flex;align-items:center;gap:8px;padding:8px;border-radius:6px;cursor:pointer;transition:background 0.2s}
-    .unit-checkbox:hover{background:rgba(255,255,255,0.02)}
-    .unit-checkbox input{cursor:pointer}
-    .unit-checkbox label{cursor:pointer;margin:0;color:#e6eef6}
-    
-    .dashboard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
-    .stat-card{background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.3);border-radius:10px;padding:16px;text-align:center}
-    .stat-value{font-size:32px;font-weight:700;color:var(--accent);margin:8px 0}
-    .stat-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px}
-    
-    .alert-badge{background:var(--danger);color:white;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:600;margin-left:8px;animation:pulse 2s infinite}
-    
-    .search-filter-bar{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
-    .search-box{flex:1;min-width:200px}
-    
-    .units-grid{display:grid;gap:14px}
-    .unit-card{background:rgba(6,182,212,0.05);border:1px solid rgba(6,182,212,0.2);border-radius:10px;padding:14px}
-    .unit-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-    .unit-title{font-weight:600;font-size:16px;color:var(--accent)}
-    
-    .vtr-list{margin-top:12px}
-    .vtr-item{background:var(--glass);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:12px;margin-bottom:10px;transition:all 0.3s}
-    .vtr-item.alert{border-color:var(--danger);box-shadow:0 0 10px rgba(239,68,68,0.3)}
-    .vtr-item.hidden{display:none}
-    .vtr-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px}
-    .vtr-id{font-weight:600;color:#e6eef6;font-size:15px}
-    .vtr-badges{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-    .vtr-service{display:inline-block;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(16,185,129,0.2);color:var(--success)}
-    .j-counter{display:inline-flex;gap:4px;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(245,158,11,0.2);color:var(--warning)}
-    
-    .crew-list{margin-top:8px;padding:8px;background:rgba(255,255,255,0.02);border-radius:6px}
-    .crew-member{font-size:12px;padding:4px 0;color:var(--muted)}
-    .crew-member strong{color:#e6eef6}
-    
-    .empenhos-timeline{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06)}
-    .empenho-entry{display:flex;align-items:flex-start;gap:10px;padding:8px;margin-bottom:6px;background:rgba(255,255,255,0.02);border-radius:6px}
-    .empenho-time{color:var(--accent);font-weight:600;min-width:70px;font-size:12px}
-    .empenho-info{flex:1}
-    .empenho-label{color:#e6eef6;font-weight:600;font-size:13px}
-    .empenho-details{font-size:11px;color:var(--muted);margin-top:4px}
-    .empenho-duration{color:var(--warning);font-weight:600;font-size:12px;min-width:80px;text-align:right}
-    .empenho-current{color:var(--success);animation:pulse 2s infinite}
-    
-    .protocol-badge{background:rgba(139,92,246,0.2);color:#a78bfa;padding:3px 6px;border-radius:3px;font-size:10px;font-weight:600;display:inline-block;margin-top:2px}
-    
-    .vtr-actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
-    
-    .chip{background:rgba(255,255,255,0.03);padding:6px 10px;border-radius:999px;font-size:12px;display:inline-block}
-    .small{font-size:12px;color:var(--muted)}
-    
-    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
-    
-    .modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:1000;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
-    .modal.active{display:flex}
-    .modal-content{background:var(--card);border-radius:12px;padding:24px;max-width:700px;width:100%;max-height:90vh;overflow-y:auto;margin:auto}
-    .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-    .modal-title{font-size:18px;font-weight:600}
-    .modal-close{background:transparent;border:none;color:var(--muted);font-size:24px;cursor:pointer;padding:0;width:32px;height:32px}
-    
-    .crew-input-group{background:rgba(255,255,255,0.03);padding:12px;border-radius:8px;margin-bottom:10px;border:1px solid rgba(255,255,255,0.05)}
-    .crew-input-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-    .crew-input-header h4{margin:0;font-size:13px;color:var(--accent)}
-    
-    .session-list{max-height:400px;overflow-y:auto}
-    .session-item{background:var(--glass);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:12px;margin-bottom:10px;cursor:pointer;transition:all 0.2s}
-    .session-item:hover{background:rgba(6,182,212,0.1);border-color:var(--accent)}
-    .session-title{font-weight:600;color:#e6eef6;margin-bottom:4px}
-    .session-meta{font-size:11px;color:var(--muted)}
-    
-    .chart-container{background:var(--glass);border-radius:8px;padding:16px;margin-bottom:16px}
-    canvas{max-height:300px}
-    
-    .tabs{display:flex;gap:8px;margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.1)}
-    .tab{padding:10px 16px;cursor:pointer;border:none;background:transparent;color:var(--muted);font-size:14px;font-weight:600;border-bottom:2px solid transparent;transition:all 0.2s}
-    .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
-    .tab-content{display:none}
-    .tab-content.active{display:block}
-    
-    @media (max-width:700px){.row{flex-direction:column}.dashboard-grid{grid-template-columns:1fr}}
-  </style>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Mapa da Força — Controle de Unidades</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/jspdf-autotable@3.5.20/dist/jspdf.plugin.autotable.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+        :root{--bg:#0f1724;--card:#0b1220;--accent:#06b6d4;--muted:#94a3b8;--glass:rgba(255,255,255,0.04);--success:#10b981;--warning:#f59e0b;--danger:#ef4444}
+        *{box-sizing:border-box;font-family:Inter,Segoe UI,Roboto,system-ui,-apple-system,Helvetica,Arial}
+        body{margin:0;background:linear-gradient(180deg,#06202a 0%,#071425 100%);color:#e6eef6;min-height:100vh;padding:24px}
+        .app{width:100%;max-width:1400px;margin:0 auto}
+        header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px}
+        h1{font-size:20px;margin:0}
+        h2{font-size:18px;margin:12px 0 8px}
+        h3{font-size:15px;margin:8px 0;color:var(--accent)}
+        .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 20px rgba(2,6,23,0.6);margin-bottom:14px}
+        
+        label{font-size:13px;color:var(--muted);display:block;margin-bottom:4px}
+        input[type=text],input[type=datetime-local],select,input[type=tel],textarea{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:var(--glass);color:inherit;font-size:14px}
+        textarea{resize:vertical;min-height:80px}
+        
+        .row{display:flex;gap:12px;margin-bottom:12px}
+        .col{flex:1}
+        .col-auto{flex:0 0 auto}
+        
+        button{background:var(--accent);border:none;padding:10px 14px;border-radius:8px;color:#022;cursor:pointer;font-weight:600;font-size:13px;transition:opacity 0.2s}
+        button:hover{opacity:0.9}
+        button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.1);color:var(--muted)}
+        button.danger{background:var(--danger);color:white}
+        button.success{background:var(--success);color:white}
+        button.small{padding:6px 10px;font-size:12px}
+        
+        .multi-select{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;max-height:300px;overflow-y:auto;padding:12px;background:var(--glass);border-radius:8px}
+        .unit-checkbox{display:flex;align-items:center;gap:8px;padding:8px;border-radius:6px;cursor:pointer;transition:background 0.2s}
+        .unit-checkbox:hover{background:rgba(255,255,255,0.02)}
+        .unit-checkbox input{cursor:pointer}
+        .unit-checkbox label{cursor:pointer;margin:0;color:#e6eef6}
+        
+        .dashboard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+        .stat-card{background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.3);border-radius:10px;padding:16px;text-align:center}
+        .stat-value{font-size:32px;font-weight:700;color:var(--accent);margin:8px 0}
+        .stat-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px}
+        
+        .alert-badge{background:var(--danger);color:white;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:600;margin-left:8px;animation:pulse 2s infinite}
+        
+        .search-filter-bar{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+        .search-box{flex:1;min-width:200px}
+        
+        .units-grid{display:grid;gap:14px}
+        .unit-card{background:rgba(6,182,212,0.05);border:1px solid rgba(6,182,212,0.2);border-radius:10px;padding:14px}
+        .unit-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+        .unit-title{font-weight:600;font-size:16px;color:var(--accent)}
+        
+        .vtr-list{margin-top:12px}
+        .vtr-item{background:var(--glass);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:12px;margin-bottom:10px;transition:all 0.3s}
+        .vtr-item.alert{border-color:var(--danger);box-shadow:0 0 10px rgba(239,68,68,0.3)}
+        .vtr-item.hidden{display:none}
+        .vtr-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px}
+        .vtr-id{font-weight:600;color:#e6eef6;font-size:15px}
+        .vtr-badges{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+        .vtr-service{display:inline-block;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(16,185,129,0.2);color:var(--success)}
+        .j-counter{display:inline-flex;gap:4px;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(245,158,11,0.2);color:var(--warning)}
+        
+        .crew-list{margin-top:8px;padding:8px;background:rgba(255,255,255,0.02);border-radius:6px}
+        .crew-member{font-size:12px;padding:4px 0;color:var(--muted)}
+        .crew-member strong{color:#e6eef6}
+        
+        .empenhos-timeline{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06)}
+        .empenho-entry{display:flex;align-items:flex-start;gap:10px;padding:8px;margin-bottom:6px;background:rgba(255,255,255,0.02);border-radius:6px}
+        .empenho-time{color:var(--accent);font-weight:600;min-width:70px;font-size:12px}
+        .empenho-info{flex:1}
+        .empenho-label{color:#e6eef6;font-weight:600;font-size:13px}
+        .empenho-details{font-size:11px;color:var(--muted);margin-top:4px}
+        .empenho-duration{color:var(--warning);font-weight:600;font-size:12px;min-width:80px;text-align:right}
+        .empenho-current{color:var(--success);animation:pulse 2s infinite}
+        
+        .protocol-badge{background:rgba(139,92,246,0.2);color:#a78bfa;padding:3px 6px;border-radius:3px;font-size:10px;font-weight:600;display:inline-block;margin-top:2px}
+        
+        .vtr-actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+        
+        .chip{background:rgba(255,255,255,0.03);padding:6px 10px;border-radius:999px;font-size:12px;display:inline-block}
+        .small{font-size:12px;color:var(--muted)}
+        
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+        
+        .modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:1000;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+        .modal.active{display:flex}
+        .modal-content{background:var(--card);border-radius:12px;padding:24px;max-width:700px;width:100%;max-height:90vh;overflow-y:auto;margin:auto}
+        .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+        .modal-title{font-size:18px;font-weight:600}
+        .modal-close{background:transparent;border:none;color:var(--muted);font-size:24px;cursor:pointer;padding:0;width:32px;height:32px}
+        
+        .crew-input-group{background:rgba(255,255,255,0.03);padding:12px;border-radius:8px;margin-bottom:10px;border:1px solid rgba(255,255,255,0.05)}
+        .crew-input-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+        .crew-input-header h4{margin:0;font-size:13px;color:var(--accent)}
+        
+        .session-list{max-height:400px;overflow-y:auto}
+        .session-item{background:var(--glass);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:12px;margin-bottom:10px;cursor:pointer;transition:all 0.2s}
+        .session-item:hover{background:rgba(6,182,212,0.1);border-color:var(--accent)}
+        .session-title{font-weight:600;color:#e6eef6;margin-bottom:4px}
+        .session-meta{font-size:11px;color:var(--muted)}
+        
+        .chart-container{background:var(--glass);border-radius:8px;padding:16px;margin-bottom:16px}
+        canvas{max-height:300px}
+        
+        .tabs{display:flex;gap:8px;margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.1)}
+        .tab{padding:10px 16px;cursor:pointer;border:none;background:transparent;color:var(--muted);font-size:14px;font-weight:600;border-bottom:2px solid transparent;transition:all 0.2s}
+        .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+        .tab-content{display:none}
+        .tab-content.active{display:block}
+        
+        @media (max-width:700px){.row{flex-direction:column}.dashboard-grid{grid-template-columns:1fr}}
+    </style>
 </head>
 <body>
-  <div class="app">
-    <header>
-      <h1>🚔 Mapa da Força — Controle de Unidades</h1>
-      <div style="display:flex;gap:8px">
-        <button id="openSessionsBtn" class="ghost small">📝 Sessões</button>
-        <button id="openStatsBtn" class="ghost small">📊 Estatísticas</button>
-      </div>
-    </header>
+    <div class="app">
+        <header>
+            <h1>🚔 Mapa da Força — Controle de Unidades</h1>
+            <div style="display:flex;gap:8px">
+                <button id="openSessionsBtn" class="ghost small">📝 Sessões</button>
+                <button id="openStatsBtn" class="ghost small">📊 Estatísticas</button>
+            </div>
+        </header>
 
-    <!-- TELA 1: Seleção de unidades -->
-    <section class="card" id="screen1">
-      <h2>Passo 1 — Informações da Operação</h2>
-      <div class="row">
-        <div class="col">
-          <label>Nome do Operador *</label>
-          <input id="operatorName" type="text" placeholder="Seu nome completo" required />
+        <section class="card" id="screen1">
+            <h2>Passo 1 — Informações da Operação</h2>
+            <div class="row">
+                <div class="col">
+                    <label>Nome do Operador *</label>
+                    <input id="operatorName" type="text" placeholder="Seu nome completo" required />
+                </div>
+                <div class="col">
+                    <label>Data e Hora de Início *</label>
+                    <input id="dateTime" type="datetime-local" required />
+                </div>
+            </div>
+
+            <div style="margin-top:16px">
+                <label>Selecione as Unidades para Controlar *</label>
+                <div class="multi-select" id="unitsMultiSelect"></div>
+            </div>
+
+            <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center">
+                <div class="small">Selecione pelo menos uma unidade</div>
+                <button id="toStep2">Iniciar Controle →</button>
+            </div>
+        </section>
+
+        <section id="screen2" style="display:none">
+            <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+                    <div>
+                        <div class="chip">👤 <strong id="opSummary"></strong></div>
+                        <div class="chip" style="margin-left:8px">📅 <strong id="dtSummary"></strong></div>
+                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                        <button id="exportPdf" class="ghost small">📄 PDF</button>
+                        <button id="exportCsv" class="ghost small">📊 CSV</button>
+                        <button id="saveLocal" class="success small">💾 Salvar</button>
+                        <button id="finishBtn" class="danger small">Finalizar</button>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid" id="dashboardStats"></div>
+            </div>
+
+            <div class="card">
+                <div class="search-filter-bar">
+                    <div class="search-box">
+                        <input type="text" id="searchVtr" placeholder="🔍 Buscar viatura..." />
+                    </div>
+                    <select id="filterService">
+                        <option value="">Todos os Serviços</option>
+                        <option value="ORDINARIO">ORDINÁRIO</option>
+                        <option value="SEG">SEG</option>
+                        <option value="POG">POG</option>
+                        <option value="OPERAÇÃO">OPERAÇÃO</option>
+                    </select>
+                    <select id="filterUnit">
+                        <option value="">Todas as Unidades</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="units-grid" id="unitsContainer"></div>
+        </section>
+
+        <div class="modal" id="vtrModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title" id="modalTitle">Adicionar Viatura</div>
+                    <button class="modal-close" onclick="closeVtrModal()">×</button>
+                </div>
+                <div>
+                    <label>Identificação da Viatura *</label>
+                    <input id="modalVtrId" type="text" placeholder="Ex: VTR-001, Guarnição 01" />
+                </div>
+
+                <div style="margin-top:12px">
+                    <label>Tipo de Serviço *</label>
+                    <select id="modalServiceType">
+                        <option value="ORDINARIO">ORDINÁRIO</option>
+                        <option value="SEG">SEG</option>
+                        <option value="POG">POG</option>
+                        <option value="OPERAÇÃO">OPERAÇÃO</option>
+                    </select>
+                </div>
+
+                <div style="margin-top:16px">
+                    <h3 style="margin-bottom:12px">Equipe da Viatura (até 5 membros)</h3>
+                    <div id="crewInputsContainer"></div>
+                    <button id="addCrewMember" class="ghost small" style="margin-top:8px">+ Adicionar Membro</button>
+                </div>
+
+                <div style="margin-top:12px">
+                    <label>Telefone de Contato</label>
+                    <input id="modalVtrPhone" type="tel" placeholder="(92) 9xxxx-xxxx" />
+                </div>
+
+                <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:8px">
+                    <button class="ghost" onclick="closeVtrModal()">Cancelar</button>
+                    <button id="saveVtrBtn" class="success">Salvar Viatura</button>
+                </div>
+            </div>
         </div>
-        <div class="col">
-          <label>Data e Hora de Início *</label>
-          <input id="dateTime" type="datetime-local" required />
-        </div>
-      </div>
 
-      <div style="margin-top:16px">
-        <label>Selecione as Unidades para Controlar *</label>
-        <div class="multi-select" id="unitsMultiSelect"></div>
-      </div>
-
-      <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center">
-        <div class="small">Selecione pelo menos uma unidade</div>
-        <button id="toStep2">Iniciar Controle →</button>
-      </div>
-    </section>
-
-    <!-- TELA 2: Controle das unidades -->
-    <section id="screen2" style="display:none">
-      <!-- Dashboard -->
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
-          <div>
-            <div class="chip">👤 <strong id="opSummary"></strong></div>
-            <div class="chip" style="margin-left:8px">📅 <strong id="dtSummary"></strong></div>
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button id="exportPdf" class="ghost small">📄 PDF</button>
-            <button id="exportCsv" class="ghost small">📊 CSV</button>
-            <button id="saveLocal" class="success small">💾 Salvar</button>
-            <button id="finishBtn" class="danger small">Finalizar</button>
-          </div>
-        </div>
-
-        <div class="dashboard-grid" id="dashboardStats"></div>
-      </div>
-
-      <!-- Busca e Filtros -->
-      <div class="card">
-        <div class="search-filter-bar">
-          <div class="search-box">
-            <input type="text" id="searchVtr" placeholder="🔍 Buscar viatura..." />
-          </div>
-          <select id="filterService">
-            <option value="">Todos os Serviços</option>
-            <option value="ORDINARIO">ORDINÁRIO</option>
-            <option value="SEG">SEG</option>
-            <option value="POG">POG</option>
-            <option value="OPERAÇÃO">OPERAÇÃO</option>
-          </select>
-          <select id="filterUnit">
-            <option value="">Todas as Unidades</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="units-grid" id="unitsContainer"></div>
-    </section>
-
-    <!-- MODAL: VTR -->
-    <div class="modal" id="vtrModal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <div class="modal-title" id="modalTitle">Adicionar Viatura</div>
-          <button class="modal-close" onclick="closeVtrModal()">×</button>
-        </div>
-        
-        <div>
-          <label>Identificação da Viatura *</label>
-          <input id="modalVtrId" type="text" placeholder="Ex: VTR-001, Guarnição 01" />
-        </div>
-
-        <div style="margin-top:12px">
-          <label>Tipo de Serviço *</label>
-          <select id="modalServiceType">
-            <option value="ORDINARIO">ORDINÁRIO</option>
-            <option value="SEG">SEG</option>
-            <option value="POG">POG</option>
-            <option value="OPERAÇÃO">OPERAÇÃO</option>
-          </select>
-        </div>
-
-        <div style="margin-top:16px">
-          <h3 style="margin-bottom:12px">Equipe da Viatura (até 5 membros)</h3>
-          <div id="crewInputsContainer"></div>
-          <button id="addCrewMember" class="ghost small" style="margin-top:8px">+ Adicionar Membro</button>
-        </div>
-
-        <div style="margin-top:12px">
-          <label>Telefone de Contato</label>
-          <input id="modalVtrPhone" type="tel" placeholder="(92) 9xxxx-xxxx" />
-        </div>
-
-        <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:8px">
-          <button class="ghost" onclick="closeVtrModal()">Cancelar</button>
-          <button id="saveVtrBtn" class="success">Salvar Viatura</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- MODAL: Empenho J -->
-    <div class="modal" id="empenhoModal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <div class="modal-title">Registrar Empenho J</div>
-          <button class="modal-close" onclick="closeEmpenhoModal()">×</button>
+        <div class="modal" id="detailsModal">
+            <div class="modal-content" style="max-width:800px">
+                <div class="modal-header">
+                    <div class="modal-title" id="detailsModalTitle">Detalhes das Viaturas</div>
+                    <button class="modal-close" onclick="closeDetailsModal()">×</button>
+                </div>
+                <div id="detailsModalContent" style="max-height:60vh; overflow-y:auto;">
+                    </div>
+            </div>
         </div>
         
-        <div class="small" style="margin-bottom:12px;background:rgba(6,182,212,0.1);padding:8px;border-radius:6px">
-          Viatura: <strong id="modalVtrName"></strong>
+        <div class="modal" id="empenhoModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">Registrar Empenho J</div>
+                    <button class="modal-close" onclick="closeEmpenhoModal()">×</button>
+                </div>
+                
+                <div class="small" style="margin-bottom:12px;background:rgba(6,182,212,0.1);padding:8px;border-radius:6px">
+                    Viatura: <strong id="modalVtrName"></strong>
+                </div>
+
+                <div>
+                    <label>Empenho J *</label>
+                    <select id="modalEmpenhoJ"></select>
+                </div>
+
+                <div style="margin-top:12px">
+                    <label>Número de Protocolo</label>
+                    <input id="modalProtocol" type="text" placeholder="Ex: 2024-12345" />
+                </div>
+
+                <div style="margin-top:12px">
+                    <label>Ações Empregadas</label>
+                    <textarea id="modalActions" placeholder="Descreva as ações realizadas..."></textarea>
+                </div>
+
+                <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:8px">
+                    <button class="ghost" onclick="closeEmpenhoModal()">Cancelar</button>
+                    <button id="saveEmpenhoBtn" class="success">Registrar Empenho</button>
+                </div>
+            </div>
         </div>
 
-        <div>
-          <label>Empenho J *</label>
-          <select id="modalEmpenhoJ"></select>
+        <div class="modal" id="sessionsModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">📝 Histórico de Sessões</div>
+                    <button class="modal-close" onclick="closeSessionsModal()">×</button>
+                </div>
+                <div class="session-list" id="sessionsList">
+                    <p class="small" style="text-align:center;padding:20px;">
+                        A funcionalidade de histórico de sessões para carregar dados antigos ainda está em desenvolvimento.
+                    </p>
+                </div>
+            </div>
         </div>
 
-        <div style="margin-top:12px">
-          <label>Número de Protocolo</label>
-          <input id="modalProtocol" type="text" placeholder="Ex: 2024-12345" />
+        <div class="modal" id="statsModal">
+            <div class="modal-content" style="max-width:900px">
+                <div class="modal-header">
+                    <div class="modal-title">📊 Estatísticas e Análises</div>
+                    <button class="modal-close" onclick="closeStatsModal()">×</button>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('charts')">📈 Gráficos</button>
+                    <button class="tab" onclick="switchTab('performance')">⏱️ Desempenho</button>
+                </div>
+
+                <div class="tab-content active" id="tab-charts">
+                    <div class="chart-container">
+                        <h3>Distribuição de Empenhos por Tipo (J)</h3>
+                        <canvas id="chartEmpenhos"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Frequência de Empenhos por Horário</h3>
+                        <canvas id="chartHorario"></canvas>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-performance">
+                    <div id="performanceStats"></div>
+                </div>
+            </div>
         </div>
 
-        <div style="margin-top:12px">
-          <label>Ações Empregadas</label>
-          <textarea id="modalActions" placeholder="Descreva as ações realizadas..."></textarea>
-        </div>
-
-        <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:8px">
-          <button class="ghost" onclick="closeEmpenhoModal()">Cancelar</button>
-          <button id="saveEmpenhoBtn" class="success">Registrar Empenho</button>
-        </div>
-      </div>
     </div>
 
-    <!-- MODAL: Sessões -->
-    <div class="modal" id="sessionsModal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <div class="modal-title">📝 Histórico de Sessões</div>
-          <button class="modal-close" onclick="closeSessionsModal()">×</button>
-        </div>
-        <div class="session-list" id="sessionsList"></div>
-      </div>
-    </div>
+    <script>
+        const units = {
+            '25DIP': '25 CICOM','11DIP': '11 CICOM','28DIP': '28 CICOM','29DIP': '29 CICOM',
+            '01DIP': '1 CICOM','02DIP': '2 CICOM','03DIP': '3 CICOM','04DIP': '4 CICOM',
+            '05DIP': '5 CICOM','06DIP': '6 CICOM','07DIP': '7 CICOM','08DIP': '8 CICOM',
+            '09DIP': '9 CICOM','10DIP': '10 CICOM','12DIP': '12 CICOM','13DIP': '13 CICOM',
+            '14DIP': '14 CICOM','15DIP': '15 CICOM','16DIP': '16 CICOM','17DIP': '17 CICOM',
+            '18DIP': '18 CICOM','19DIP': '19 CICOM','20DIP': '20 CICOM','21DIP': '21 CICOM',
+            '22DIP': '22 CICOM','23DIP': '23 CICOM','24DIP': '24 CICOM','26DIP': '26 CICOM',
+            '27DIP': '27 CICOM','30DIP': '30 CICOM',
+            'CPA NORTE': 'CPA NORTE','CPA SUL': 'CPA SUL','CPA LESTE': 'CPA LESTE','CPA OESTE': 'CPA OESTE',
+            'CPA C. SUL/C. OESTE': 'CPA C. SUL/C. OESTE',
+            'FT': 'FT','BPTRAN': 'BPTRAN','CPTUR': 'CPTUR','RMP': 'RMP','CICLO': 'CICLO',
+            'ROCAM': 'ROCAM','CHOQUE': 'CHOQUE','MARTE': 'MARTE','RPMON': 'RPMON','CIPCÃES': 'CIPCÃES',
+            'COE': 'COE','BPAMB': 'BPAMB','CECOPOM': 'CECOPOM','GRAER': 'GRAER','BPG': 'BPG','NPPM': 'NPPM'
+        };
 
-    <!-- MODAL: Estatísticas -->
-    <div class="modal" id="statsModal">
-      <div class="modal-content" style="max-width:900px">
-        <div class="modal-header">
-          <div class="modal-title">📊 Estatísticas e Análises</div>
-          <button class="modal-close" onclick="closeStatsModal()">×</button>
-        </div>
+        const empenhosJ = [
+            {value:'J1',text:'J1: Atividade Fim'},{value:'J2',text:'J2: Atividade administrativa'},
+            {value:'J3',text:'J3: Substituição de Guarnição PM'},{value:'J4',text:'J4: Refeição'},
+            {value:'J5',text:'J5: Abastecimento'},{value:'J6',text:'J6: Limpeza de viatura'},
+            {value:'J7',text:'J7: Manutenção mecânica'},{value:'J8',text:'J8: Necessidades Fisiológicas'},
+            {value:'J9',text:'J9: Deslocamento para ocorrência'},{value:'J10',text:'J10: Chegada no local da ocorrência'},
+            {value:'J11',text:'J11: Saída do local da ocorrência'},{value:'J12',text:'J12: Guarnição na base'},
+            {value:'J15',text:'J15: Operação Policial Militar'}
+        ];
 
-        <div class="tabs">
-          <button class="tab active" onclick="switchTab('charts')">📈 Gráficos</button>
-          <button class="tab" onclick="switchTab('performance')">⏱️ Desempenho</button>
-        </div>
+        const ALERT_THRESHOLDS = {J10:30,J9:20,J1:60};
 
-        <div class="tab-content active" id="tab-charts">
-          <div class="chart-container">
-            <h3>Distribuição de Empenhos por Tipo</h3>
-            <canvas id="chartEmpenhos"></canvas>
-          </div>
-          <div class="chart-container">
-            <h3>Empenhos por Horário</h3>
-            <canvas id="chartHorario"></canvas>
-          </div>
-        </div>
+        let session = {operator:'',datetime:'',selectedUnits:[],id:null};
+        let unitsData = {};
+        let editingVtr = null;
+        let currentVtrForEmpenho = null;
+        let timerInterval = null;
+        let alertsShown = new Set();
+        let empenhosChart = null; // Para o Chart.js
+        let horarioChart = null;  // Para o Chart.js
 
-        <div class="tab-content" id="tab-performance">
-          <div id="performanceStats"></div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <script>
-    const units = {
-      '25DIP': '25 CICOM','11DIP': '11 CICOM','28DIP': '28 CICOM','29DIP': '29 CICOM',
-      '01DIP': '1 CICOM','02DIP': '2 CICOM','03DIP': '3 CICOM','04DIP': '4 CICOM',
-      '05DIP': '5 CICOM','06DIP': '6 CICOM','07DIP': '7 CICOM','08DIP': '8 CICOM',
-      '09DIP': '9 CICOM','10DIP': '10 CICOM','12DIP': '12 CICOM','13DIP': '13 CICOM',
-      '14DIP': '14 CICOM','15DIP': '15 CICOM','16DIP': '16 CICOM','17DIP': '17 CICOM',
-      '18DIP': '18 CICOM','19DIP': '19 CICOM','20DIP': '20 CICOM','21DIP': '21 CICOM',
-      '22DIP': '22 CICOM','23DIP': '23 CICOM','24DIP': '24 CICOM','26DIP': '26 CICOM',
-      '27DIP': '27 CICOM','30DIP': '30 CICOM',
-      'CPA NORTE': 'CPA NORTE','CPA SUL': 'CPA SUL','CPA LESTE': 'CPA LESTE','CPA OESTE': 'CPA OESTE',
-      'CPA C. SUL/C. OESTE': 'CPA C. SUL/C. OESTE',
-      'FT': 'FT','BPTRAN': 'BPTRAN','CPTUR': 'CPTUR','RMP': 'RMP','CICLO': 'CICLO',
-      'ROCAM': 'ROCAM','CHOQUE': 'CHOQUE','MARTE': 'MARTE','RPMON': 'RPMON','CIPCÃES': 'CIPCÃES',
-      'COE': 'COE','BPAMB': 'BPAMB','CECOPOM': 'CECOPOM','GRAER': 'GRAER','BPG': 'BPG','NPPM': 'NPPM'
-    };
-
-    const empenhosJ = [
-      {value:'J1',text:'J1: Atividade Fim'},{value:'J2',text:'J2: Atividade administrativa'},
-      {value:'J3',text:'J3: Substituição de Guarnição PM'},{value:'J4',text:'J4: Refeição'},
-      {value:'J5',text:'J5: Abastecimento'},{value:'J6',text:'J6: Limpeza de viatura'},
-      {value:'J7',text:'J7: Manutenção mecânica'},{value:'J8',text:'J8: Necessidades Fisiológicas'},
-      {value:'J9',text:'J9: Deslocamento para ocorrência'},{value:'J10',text:'J10: Chegada no local da ocorrência'},
-      {value:'J11',text:'J11: Saída do local da ocorrência'},{value:'J12',text:'J12: Guarnição na base'},
-      {value:'J15',text:'J15: Operação Policial Militar'}
-    ];
-
-    const ALERT_THRESHOLDS = {J10:30,J9:20,J1:60};
-
-    let session = {operator:'',datetime:'',selectedUnits:[],id:null};
-    let unitsData = {};
-    let editingVtr = null;
-    let currentVtrForEmpenho = null;
-    let timerInterval = null;
-    let alertsShown = new Set();
-
-    // ====== Inicialização ======
-    (function init(){
-      const multiSelect = document.getElementById('unitsMultiSelect');
-      Object.entries(units).forEach(([k,v])=>{
-        const div = document.createElement('div');
-        div.className = 'unit-checkbox';
-        div.innerHTML = `<input type="checkbox" id="unit_${k}" value="${k}"><label for="unit_${k}">${v}</label>`;
-        multiSelect.appendChild(div);
-      });
-
-      const modalEmpenhoJ = document.getElementById('modalEmpenhoJ');
-      empenhosJ.forEach(e=>{
-        const opt = document.createElement('option');
-        opt.value = e.value;
-        opt.textContent = e.text;
-        modalEmpenhoJ.appendChild(opt);
-      });
-
-      const now = new Date();
-      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-      document.getElementById('dateTime').value = now.toISOString().slice(0,16);
-    })();
-
-    // ====== Passo 1 → Passo 2 ======
-    document.getElementById('toStep2').addEventListener('click', ()=>{
-      const op = document.getElementById('operatorName').value.trim();
-      const dt = document.getElementById('dateTime').value;
-      const selected = Array.from(document.querySelectorAll('#unitsMultiSelect input:checked')).map(cb=>cb.value);
-
-      if(!op || !dt){
-        alert('Preencha o nome do operador e a data/hora.');
-        return;
-      }
-      if(selected.length === 0){
-        alert('Selecione pelo menos uma unidade para controlar.');
-        return;
-      }
-
-      session.operator = op;
-      session.datetime = dt;
-      session.selectedUnits = selected;
-      session.id = Date.now();
-
-      selected.forEach(uk=>{
-        if(!unitsData[uk]) unitsData[uk] = {vtrs:[]};
-      });
-
-      document.getElementById('opSummary').textContent = op;
-      document.getElementById('dtSummary').textContent = new Date(dt).toLocaleString('pt-BR');
-
-      const filterUnit = document.getElementById('filterUnit');
-      filterUnit.innerHTML = '<option value="">Todas as Unidades</option>';
-      selected.forEach(uk=>{
-        const opt = document.createElement('option');
-        opt.value = uk;
-        opt.textContent = units[uk];
-        filterUnit.appendChild(opt);
-      });
-
-      document.getElementById('screen1').style.display = 'none';
-      document.getElementById('screen2').style.display = 'block';
-
-      renderUnits();
-      updateDashboard();
-      startTimers();
-      loadFromLocal();
-    });
-
-    // ====== Dashboard ======
-    function updateDashboard(){
-      let totalVtrs = 0;
-      let totalEmpenhos = 0;
-      let empenhoCounts = {};
-      let activeVtrs = 0;
-
-      session.selectedUnits.forEach(uk=>{
-        const vtrs = unitsData[uk]?.vtrs || [];
-        totalVtrs += vtrs.length;
-        
-        vtrs.forEach(vtr=>{
-          if(vtr.empenhos && vtr.empenhos.length > 0){
-            activeVtrs++;
-            totalEmpenhos += vtr.empenhos.length;
-            vtr.empenhos.forEach(emp=>{
-              empenhoCounts[emp.j] = (empenhoCounts[emp.j] || 0) + 1;
+        // ====== Inicialização ======
+        (function init(){
+            const multiSelect = document.getElementById('unitsMultiSelect');
+            Object.entries(units).forEach(([k,v])=>{
+                const div = document.createElement('div');
+                div.className = 'unit-checkbox';
+                div.innerHTML = `<input type="checkbox" id="unit_${k}" value="${k}"><label for="unit_${k}">${v}</label>`;
+                multiSelect.appendChild(div);
             });
-          }
+
+            const modalEmpenhoJ = document.getElementById('modalEmpenhoJ');
+            empenhosJ.forEach(e=>{
+                const opt = document.createElement('option');
+                opt.value = e.value;
+                opt.textContent = e.text;
+                modalEmpenhoJ.appendChild(opt);
+            });
+
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('dateTime').value = now.toISOString().slice(0,16);
+            
+            loadFromLocal();
+        })();
+
+        // ====== Funções de Utilidade ======
+        function getJText(value){
+            const empenho = empenhosJ.find(e => e.value === value);
+            return empenho ? empenho.text : value;
+        }
+
+        function formatTime(date){
+            return new Date(date).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+        }
+
+        function timeDifference(start, end = Date.now()){
+            const diffMs = end - new Date(start);
+            const diffMins = Math.floor(diffMs / 60000);
+            const hours = Math.floor(diffMins / 60);
+            const minutes = diffMins % 60;
+            return `${hours > 0 ? hours + 'h ' : ''}${minutes}m`;
+        }
+        
+        // ====== Persistência (Salvar/Carregar) ======
+        function saveToLocal() {
+            if (session.id) {
+                const sessionToSave = {
+                    session: session,
+                    unitsData: unitsData
+                };
+                localStorage.setItem('currentSession', JSON.stringify(sessionToSave));
+            }
+        }
+
+        function loadFromLocal() {
+            const savedSession = localStorage.getItem('currentSession');
+            if (savedSession) {
+                const data = JSON.parse(savedSession);
+                session = data.session;
+                unitsData = data.unitsData;
+
+                document.getElementById('operatorName').value = session.operator;
+                document.getElementById('dateTime').value = session.datetime.slice(0,16);
+                session.selectedUnits.forEach(uk => {
+                    const cb = document.getElementById(`unit_${uk}`);
+                    if (cb) cb.checked = true;
+                });
+
+                if (session.operator && session.datetime && session.selectedUnits.length > 0) {
+                    document.getElementById('opSummary').textContent = session.operator;
+                    document.getElementById('dtSummary').textContent = new Date(session.datetime).toLocaleString('pt-BR');
+                    
+                    const filterUnit = document.getElementById('filterUnit');
+                    filterUnit.innerHTML = '<option value="">Todas as Unidades</option>';
+                    session.selectedUnits.forEach(uk=>{
+                        const opt = document.createElement('option');
+                        opt.value = uk;
+                        opt.textContent = units[uk];
+                        filterUnit.appendChild(opt);
+                    });
+
+                    document.getElementById('screen1').style.display = 'none';
+                    document.getElementById('screen2').style.display = 'block';
+
+                    renderUnits();
+                    updateDashboard();
+                    startTimers();
+                }
+            }
+        }
+        
+        document.getElementById('saveLocal').addEventListener('click', () => {
+             saveToLocal();
+             alert('Sessão salva localmente com sucesso!');
         });
-      });
 
-      const topJ = Object.entries(empenhoCounts).sort((a,b)=>b[1]-a[1])[0];
 
-      const dashboard = document.getElementById('dashboardStats');
-      dashboard.innerHTML = `
-        <div class="stat-card">
-          <div class="stat-label">Viaturas Total</div>
-          <div class="stat-value">${totalVtrs}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Viaturas Ativas</div>
-          <div class="stat-value">${activeVtrs}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Empenhos Total</div>
-          <div class="stat-value">${totalEmpenhos}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">J Mais Usado</div>
-          <div class="stat-value" style="font-size:24px">${topJ ? topJ[0] : '-'}</div>
-        </div>
-      `;
-    }
+        // ====== Passo 1 → Passo 2 ======
+        document.getElementById('toStep2').addEventListener('click', ()=>{
+            const op = document.getElementById('operatorName').value.trim();
+            const dt = document.getElementById('dateTime').value;
+            const selected = Array.from(document.querySelectorAll('#unitsMultiSelect input:checked')).map(cb=>cb.value);
 
-    // ====== Alertas de Tempo ======
-    function checkTimeAlerts(){
-      const now = Date.now();
-      session.selectedUnits.forEach(uk=>{
-        const vtrs = unitsData[uk]?.vtrs || [];
-        vtrs.forEach((vtr,idx)=>{
-          if(!vtr.empenhos || vtr.empenhos.length === 0) return;
-          
-          const lastEmpenho = vtr.empenhos[vtr.empenhos.length - 1];
-          const duration = (now - new Date(lastEmpenho.time)) / 60000;
-          const threshold = ALERT_THRESHOLDS[lastEmpenho.j];
-          
-          const alertKey = `${uk}-${idx}-${lastEmpenho.time}`;
-          
-          if(threshold && duration > threshold && !alertsShown.has(alertKey)){
-            alertsShown.add(alertKey);
-            showAlert(vtr.id, lastEmpenho.j, Math.floor(duration));
-          }
+            if(!op || !dt){
+                alert('Preencha o nome do operador e a data/hora.');
+                return;
+            }
+            if(selected.length === 0){
+                alert('Selecione pelo menos uma unidade para controlar.');
+                return;
+            }
+
+            session.operator = op;
+            session.datetime = dt;
+            session.selectedUnits = selected;
+            session.id = Date.now(); 
+
+            selected.forEach(uk=>{
+                if(!unitsData[uk]) unitsData[uk] = {vtrs:[]};
+            });
+
+            document.getElementById('opSummary').textContent = op;
+            document.getElementById('dtSummary').textContent = new Date(dt).toLocaleString('pt-BR');
+
+            const filterUnit = document.getElementById('filterUnit');
+            filterUnit.innerHTML = '<option value="">Todas as Unidades</option>';
+            selected.forEach(uk=>{
+                const opt = document.createElement('option');
+                opt.value = uk;
+                opt.textContent = units[uk];
+                filterUnit.appendChild(opt);
+            });
+
+            document.getElementById('screen1').style.display = 'none';
+            document.getElementById('screen2').style.display = 'block';
+
+            renderUnits();
+            updateDashboard();
+            startTimers();
+            saveToLocal();
         });
-      });
-    }
-
-    function showAlert(vtrId, j, mins){
-      if(Notification.permission === 'granted'){
-        new Notification('⚠️ Alerta de Tempo', {
-          body: `${vtrId} está em ${j} há ${mins} minutos`,
-          icon: '🚔'
-        });
-      }
-      console.warn(`ALERTA: ${vtrId} em ${j} há ${mins} min`);
-    }
-
-    // Solicitar permissão de notificação
-    if('Notification' in window && Notification.permission === 'default'){
-      Notification.requestPermission();
-    }
-
-    // Funções de Utilidade
-    function getJText(value){
-      const empenho = empenhosJ.find(e => e.value === value);
-      return empenho ? empenho.text : value;
-    }
-
-    function formatTime(date){
-      return new Date(date).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
-    }
-
-    function timeDifference(start, end = Date.now()){
-      const diffMs = end - new Date(start);
-      const diffMins = Math.floor(diffMs / 60000);
-      const hours = Math.floor(diffMins / 60);
-      const minutes = diffMins % 60;
-      return `${hours > 0 ? hours + 'h ' : ''}${minutes}m`;
-    }
-
-    // ====== Gerenciamento de VTRs ======
-
-    function openVtrModal(unitKey, vtrIndex = null){
-      const modal = document.getElementById('vtrModal');
-      const container = document.getElementById('crewInputsContainer');
-      container.innerHTML = '';
-      editingVtr = {unitKey, vtrIndex};
-
-      if(vtrIndex !== null){
-        const vtr = unitsData[unitKey].vtrs[vtrIndex];
-        document.getElementById('modalTitle').textContent = `Editar Viatura: ${vtr.id}`;
-        document.getElementById('modalVtrId').value = vtr.id;
-        document.getElementById('modalServiceType').value = vtr.service;
-        document.getElementById('modalVtrPhone').value = vtr.phone || '';
-        vtr.crew.forEach(member => addCrewInput(member.name, member.rank));
-      } else {
-        document.getElementById('modalTitle').textContent = `Adicionar Viatura em ${units[unitKey]}`;
-        document.getElementById('modalVtrId').value = '';
-        document.getElementById('modalServiceType').value = 'ORDINARIO';
-        document.getElementById('modalVtrPhone').value = '';
-        for(let i=0; i<3; i++) addCrewInput(); // 3 campos padrão
-      }
-      modal.classList.add('active');
-    }
-
-    function closeVtrModal(){
-      document.getElementById('vtrModal').classList.remove('active');
-      editingVtr = null;
-    }
-
-    document.getElementById('addCrewMember').addEventListener('click', () => addCrewInput());
-
-    function addCrewInput(name = '', rank = ''){
-      const container = document.getElementById('crewInputsContainer');
-      if(container.children.length >= 5) return;
-      
-      const idx = container.children.length;
-      const div = document.createElement('div');
-      div.className = 'crew-input-group';
-      div.innerHTML = `
-        <div class="crew-input-header">
-          <h4>Membro ${idx + 1}</h4>
-          ${idx > 0 ? `<button type="button" class="danger small" onclick="this.closest('.crew-input-group').remove()">Remover</button>` : ''}
-        </div>
-        <div class="row">
-          <div class="col">
-            <label>Posto/Graduação</label>
-            <input type="text" class="crew-rank" value="${rank}" placeholder="Ex: Cap, Sgt, Sd" />
-          </div>
-          <div class="col">
-            <label>Nome de Guerra</label>
-            <input type="text" class="crew-name" value="${name}" placeholder="Ex: Silva, Junior" />
-          </div>
-        </div>
-      `;
-      container.appendChild(div);
-    }
-
-    document.getElementById('saveVtrBtn').addEventListener('click', saveVtr);
-
-    function saveVtr(){
-      const {unitKey, vtrIndex} = editingVtr;
-      const id = document.getElementById('modalVtrId').value.trim();
-      const service = document.getElementById('modalServiceType').value;
-      const phone = document.getElementById('modalVtrPhone').value.trim();
-      
-      const crew = Array.from(document.querySelectorAll('#crewInputsContainer .crew-input-group')).map(group => ({
-        rank: group.querySelector('.crew-rank').value.trim(),
-        name: group.querySelector('.crew-name').value.trim(),
-      })).filter(m => m.rank || m.name);
-
-      if(!id){
-        alert('A Identificação da Viatura é obrigatória.');
-        return;
-      }
-
-      const newVtr = {
-        id, service, crew, phone, unitKey,
-        empenhos: vtrIndex !== null ? unitsData[unitKey].vtrs[vtrIndex].empenhos : []
-      };
-
-      if(vtrIndex !== null){
-        unitsData[unitKey].vtrs[vtrIndex] = newVtr;
-      } else {
-        // Impedir VTRs com ID duplicado na mesma unidade
-        if(unitsData[unitKey].vtrs.some(v => v.id === id)){
-          alert(`A viatura com ID "${id}" já existe na unidade ${units[unitKey]}.`);
-          return;
-        }
-        unitsData[unitKey].vtrs.push(newVtr);
-      }
-
-      closeVtrModal();
-      renderUnits();
-      updateDashboard();
-      saveToLocal();
-    }
-
-    function deleteVtr(unitKey, vtrIndex){
-      if(confirm(`Tem certeza que deseja remover a viatura ${unitsData[unitKey].vtrs[vtrIndex].id}?`)){
-        unitsData[unitKey].vtrs.splice(vtrIndex, 1);
-        renderUnits();
-        updateDashboard();
-        saveToLocal();
-      }
-    }
-
-    // ====== Gerenciamento de Empenhos J ======
-    function openEmpenhoModal(unitKey, vtrIndex){
-      currentVtrForEmpenho = {unitKey, vtrIndex};
-      const vtr = unitsData[unitKey].vtrs[vtrIndex];
-      document.getElementById('modalVtrName').textContent = vtr.id;
-      document.getElementById('modalEmpenhoJ').value = 'J1'; // Padrão J1
-      document.getElementById('modalProtocol').value = '';
-      document.getElementById('modalActions').value = '';
-      document.getElementById('empenhoModal').classList.add('active');
-    }
-
-    function closeEmpenhoModal(){
-      document.getElementById('empenhoModal').classList.remove('active');
-      currentVtrForEmpenho = null;
-    }
-
-    document.getElementById('saveEmpenhoBtn').addEventListener('click', saveEmpenho);
-
-    function saveEmpenho(){
-      if(!currentVtrForEmpenho) return;
-      const {unitKey, vtrIndex} = currentVtrForEmpenho;
-      const vtr = unitsData[unitKey].vtrs[vtrIndex];
-
-      const j = document.getElementById('modalEmpenhoJ').value;
-      const protocol = document.getElementById('modalProtocol').value.trim();
-      const actions = document.getElementById('modalActions').value.trim();
-      const now = new Date().toISOString();
-
-      const newEmpenho = {
-        j,
-        time: now,
-        protocol: protocol || null,
-        actions: actions || null
-      };
-
-      vtr.empenhos.push(newEmpenho);
-      closeEmpenhoModal();
-      renderUnits();
-      updateDashboard();
-      saveToLocal();
-    }
-
-    // ====== Renderização e Filtro ======
-    function renderUnits(){
-      const container = document.getElementById('unitsContainer');
-      container.innerHTML = '';
-      const search = document.getElementById('searchVtr').value.toLowerCase();
-      const filterService = document.getElementById('filterService').value;
-      const filterUnit = document.getElementById('filterUnit').value;
-
-      session.selectedUnits.forEach(uk => {
-        if(filterUnit && filterUnit !== uk) return;
-
-        const unitContainer = document.createElement('div');
-        unitContainer.className = 'unit-card';
-        unitContainer.innerHTML = `
-          <div class="unit-header">
-            <div class="unit-title">
-              ${units[uk]}
-              <span class="small" id="vtrCount-${uk}">(${unitsData[uk].vtrs.length} Viaturas)</span>
-            </div>
-            <button class="small" onclick="openVtrModal('${uk}', null)">+ Nova VTR</button>
-          </div>
-          <div class="vtr-list" id="vtrList-${uk}"></div>
-        `;
-        container.appendChild(unitContainer);
-
-        const vtrList = document.getElementById(`vtrList-${uk}`);
-        let unitVtrCount = 0;
-        
-        unitsData[uk].vtrs.forEach((vtr, vtrIndex) => {
-          if(filterService && filterService !== vtr.service) return;
-          if(search && !vtr.id.toLowerCase().includes(search) && !vtr.crew.some(m => m.name.toLowerCase().includes(search))) return;
-          
-          unitVtrCount++;
-
-          const lastEmpenho = vtr.empenhos[vtr.empenhos.length - 1];
-          const isAlert = lastEmpenho && ALERT_THRESHOLDS[lastEmpenho.j] && (Date.now() - new Date(lastEmpenho.time)) / 60000 > ALERT_THRESHOLDS[lastEmpenho.j];
-
-          const vtrItem = document.createElement('div');
-          vtrItem.className = `vtr-item ${isAlert ? 'alert' : ''}`;
-          vtrItem.id = `vtr-item-${uk}-${vtrIndex}`;
-          
-          vtrItem.innerHTML = `
-            <div class="vtr-header">
-              <span class="vtr-id">
-                ${vtr.id} ${isAlert ? '<span class="alert-badge">ALERTA</span>' : ''}
-              </span>
-              <div class="vtr-badges">
-                <span class="vtr-service">${vtr.service}</span>
-                ${lastEmpenho ? `<span class="j-counter">
-                  <strong>${lastEmpenho.j}</strong> (<span id="vtr-timer-${uk}-${vtrIndex}">0m</span>)
-                </span>` : ''}
-              </div>
-            </div>
-            
-            <div class="crew-list">
-              ${vtr.crew.map(m => `<div class="crew-member"><strong>${m.rank}</strong> ${m.name}</div>`).join('')}
-            </div>
-
-            ${lastEmpenho ? `
-              <div class="empenhos-timeline">
-                <div class="empenho-entry">
-                  <span class="empenho-time empenho-current">${formatTime(lastEmpenho.time)}</span>
-                  <div class="empenho-info">
-                    <span class="empenho-label">${getJText(lastEmpenho.j)}</span>
-                    ${lastEmpenho.protocol ? `<span class="protocol-badge">Prot: ${lastEmpenho.protocol}</span>` : ''}
-                    ${lastEmpenho.actions ? `<div class="empenho-details">${lastEmpenho.actions}</div>` : ''}
-                  </div>
-                  <span class="empenho-duration" id="vtr-duration-${uk}-${vtrIndex}">0m</span>
-                </div>
-              </div>
-            ` : `<div class="small" style="margin-top:8px">Sem empenho registrado.</div>`}
-            
-            <div class="vtr-actions">
-              <button class="small success" onclick="openEmpenhoModal('${uk}', ${vtrIndex})">Novo J</button>
-              <button class="small ghost" onclick="openVtrModal('${uk}', ${vtrIndex})">Editar VTR</button>
-              <button class="small danger" onclick="deleteVtr('${uk}', ${vtrIndex})">Excluir</button>
-            </div>
-          `;
-          vtrList.appendChild(vtrItem);
-        });
-        
-        document.getElementById(`vtrCount-${uk}`).textContent = `(${unitVtrCount} Viaturas)`;
-        // Oculta a unidade se não houver viaturas filtradas
-        if (unitVtrCount === 0 && (filterUnit || search || filterService)) {
-          unitContainer.style.display = 'none';
-        }
-      });
-    }
-
-    document.getElementById('searchVtr').addEventListener('input', renderUnits);
-    document.getElementById('filterService').addEventListener('change', renderUnits);
-    document.getElementById('filterUnit').addEventListener('change', renderUnits);
-
-    // ====== Timers e Alertas ======
-    function startTimers(){
-      if(timerInterval) clearInterval(timerInterval);
-      timerInterval = setInterval(() => {
-        const now = Date.now();
-        session.selectedUnits.forEach(uk => {
-          unitsData[uk]?.vtrs.forEach((vtr, vtrIndex) => {
-            const lastEmpenho = vtr.empenhos[vtr.empenhos.length - 1];
-            if(lastEmpenho){
-              const timerElement = document.getElementById(`vtr-timer-${uk}-${vtrIndex}`);
-              const durationElement = document.getElementById(`vtr-duration-${uk}-${vtrIndex}`);
-              
-              if(timerElement){
-                const duration = timeDifference(lastEmpenho.time, now);
-                timerElement.textContent = duration.replace(' ', '');
-                durationElement.textContent = duration;
-
-                const vtrItem = document.getElementById(`vtr-item-${uk}-${vtrIndex}`);
-                const durationMins = (now - new Date(lastEmpenho.time)) / 60000;
-                const threshold = ALERT_THRESHOLDS[lastEmpenho.j];
-
-                if(threshold && durationMins > threshold){
-                  vtrItem.classList.add('alert');
-                  checkTimeAlerts(); // Verifica se precisa disparar a notificação
-                } else {
-                  vtrItem.classList.remove('alert');
-                }
-              }
-            }
-          });
-        });
-      }, 1000); // Atualiza a cada 1 segundo
-    }
-
-    // ====== Persistência (Local Storage) ======
-
-    function saveToLocal(){
-      if(!session.id) return;
-      const sessions = JSON.parse(localStorage.getItem('forceMapSessions') || '[]');
-      const currentSessionData = {
-        session,
-        unitsData,
-        lastUpdate: new Date().toISOString()
-      };
-      
-      const existingIndex = sessions.findIndex(s => s.session.id === session.id);
-      
-      if(existingIndex > -1){
-        sessions[existingIndex] = currentSessionData;
-      } else {
-        sessions.push(currentSessionData);
-      }
-
-      localStorage.setItem('forceMapSessions', JSON.stringify(sessions));
-    }
-
-    function loadFromLocal(sessionId = null){
-      const sessions = JSON.parse(localStorage.getItem('forceMapSessions') || '[]');
-      const dataToLoad = sessionId ? sessions.find(s => s.session.id === sessionId) : null;
-      
-      if(dataToLoad){
-        session = dataToLoad.session;
-        unitsData = dataToLoad.unitsData;
-
-        // Atualiza a UI para a tela 2
-        document.getElementById('operatorName').value = session.operator;
-        document.getElementById('dateTime').value = session.datetime.slice(0, 16);
-        document.getElementById('opSummary').textContent = session.operator;
-        document.getElementById('dtSummary').textContent = new Date(session.datetime).toLocaleString('pt-BR');
-        
-        const filterUnit = document.getElementById('filterUnit');
-        filterUnit.innerHTML = '<option value="">Todas as Unidades</option>';
-        session.selectedUnits.forEach(uk=>{
-          const opt = document.createElement('option');
-          opt.value = uk;
-          opt.textContent = units[uk];
-          filterUnit.appendChild(opt);
-        });
-        
-        document.getElementById('screen1').style.display = 'none';
-        document.getElementById('screen2').style.display = 'block';
-
-        renderUnits();
-        updateDashboard();
-        startTimers();
-        closeSessionsModal();
-        alert(`Sessão "${session.operator} - ${new Date(session.datetime).toLocaleString('pt-BR')}" carregada.`);
-        return true;
-      }
-      return false;
-    }
-
-    document.getElementById('saveLocal').addEventListener('click', () => {
-      saveToLocal();
-      alert('Sessão salva localmente!');
-    });
-
-    document.getElementById('finishBtn').addEventListener('click', () => {
-      if(confirm('Tem certeza que deseja finalizar a sessão atual? Os dados serão salvos.')){
-        saveToLocal();
-        location.reload(); // Recarrega para a tela 1
-      }
-    });
-
-    // Tenta carregar a última sessão ao iniciar (se existir)
-    if(!loadFromLocal(session.id)){
-      // Se não houver sessão ativa, tenta carregar a mais recente
-      const sessions = JSON.parse(localStorage.getItem('forceMapSessions') || '[]');
-      if(sessions.length > 0) {
-        const latestSession = sessions.sort((a, b) => new Date(b.lastUpdate) - new Date(a.lastUpdate))[0];
-        if (confirm(`Deseja carregar a última sessão salva (${latestSession.session.operator} - ${new Date(latestSession.session.datetime).toLocaleString('pt-BR')})?`)) {
-          loadFromLocal(latestSession.session.id);
-        }
-      }
-    }
-
-
-    // ====== MODAL SESSÕES ======
-    document.getElementById('openSessionsBtn').addEventListener('click', openSessionsModal);
-
-    function openSessionsModal(){
-      const sessions = JSON.parse(localStorage.getItem('forceMapSessions') || '[]');
-      const list = document.getElementById('sessionsList');
-      list.innerHTML = '';
-
-      if(sessions.length === 0){
-        list.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px">Nenhuma sessão salva localmente.</div>';
-      }
-
-      sessions.sort((a, b) => new Date(b.lastUpdate) - new Date(a.lastUpdate)).forEach(s => {
-        const item = document.createElement('div');
-        item.className = 'session-item';
-        item.onclick = () => loadFromLocal(s.session.id);
-        
-        const vtrCount = Object.values(s.unitsData).reduce((sum, u) => sum + u.vtrs.length, 0);
-
-        item.innerHTML = `
-          <div class="session-title">${s.session.operator}</div>
-          <div class="session-meta">
-            Início: ${new Date(s.session.datetime).toLocaleString('pt-BR')} | 
-            VTRs: ${vtrCount} | 
-            Última Atualização: ${new Date(s.lastUpdate).toLocaleString('pt-BR')}
-          </div>
-        `;
-        list.appendChild(item);
-      });
-      
-      document.getElementById('sessionsModal').classList.add('active');
-    }
-
-    function closeSessionsModal(){
-      document.getElementById('sessionsModal').classList.remove('active');
-    }
-
-
-    // ====== MODAL ESTATÍSTICAS (Chart.js) ======
-    document.getElementById('openStatsBtn').addEventListener('click', openStatsModal);
-
-    let chartEmpenhosInstance = null;
-    let chartHorarioInstance = null;
-
-    function openStatsModal(){
-      document.getElementById('statsModal').classList.add('active');
-      switchTab('charts'); // Inicia na aba de gráficos
-      renderCharts();
-      renderPerformance();
-    }
-
-    function closeStatsModal(){
-      document.getElementById('statsModal').classList.remove('active');
-      if(chartEmpenhosInstance) chartEmpenhosInstance.destroy();
-      if(chartHorarioInstance) chartHorarioInstance.destroy();
-    }
-
-    function switchTab(tabId){
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      document.getElementById(`tab-${tabId}`).classList.add('active');
-      if(tabId === 'charts') renderCharts();
-    }
-
-    function renderCharts(){
-      // Coleta de dados
-      let empenhoCounts = {};
-      let hourCounts = new Array(24).fill(0);
-      
-      session.selectedUnits.forEach(uk => {
-        unitsData[uk]?.vtrs.forEach(vtr => {
-          vtr.empenhos.forEach(emp => {
-            empenhoCounts[emp.j] = (empenhoCounts[emp.j] || 0) + 1;
-            const hour = new Date(emp.time).getHours();
-            hourCounts[hour]++;
-          });
-        });
-      });
-
-      // Gráfico de Distribuição de Empenhos
-      const empenhoLabels = empenhosJ.map(e => e.value);
-      const empenhoData = empenhoLabels.map(j => empenhoCounts[j] || 0);
-
-      const ctxEmpenhos = document.getElementById('chartEmpenhos').getContext('2d');
-      if(chartEmpenhosInstance) chartEmpenhosInstance.destroy();
-      chartEmpenhosInstance = new Chart(ctxEmpenhos, {
-        type: 'pie',
-        data: {
-          labels: empenhoLabels.filter((_, i) => empenhoData[i] > 0),
-          datasets: [{
-            data: empenhoData.filter(d => d > 0),
-            backgroundColor: ['#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#a78bfa', '#84cc16', '#f97316', '#6366f1', '#ec4899', '#facc15', '#0ea5e9', '#34d399', '#fb7185'],
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {legend: {position: 'right', labels: {color: '#e6eef6'}}},
-        }
-      });
-
-      // Gráfico de Empenhos por Horário
-      const hourLabels = Array.from({length:24}, (_, i) => `${i}h`);
-      const ctxHorario = document.getElementById('chartHorario').getContext('2d');
-      if(chartHorarioInstance) chartHorarioInstance.destroy();
-      chartHorarioInstance = new Chart(ctxHorario, {
-        type: 'bar',
-        data: {
-          labels: hourLabels,
-          datasets: [{
-            label: 'Total de Empenhos',
-            data: hourCounts,
-            backgroundColor: '#06b6d4'
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {beginAtZero: true, ticks: {color: '#94a3b8'}},
-            x: {ticks: {color: '#94a3b8'}}
-          },
-          plugins: {legend: {display: false}}
-        }
-      });
-    }
-
-    function calculateEmpenhoDuration(empenhos){
-      const durations = {};
-      for(let i = 0; i < empenhos.length; i++){
-        const current = empenhos[i];
-        const next = empenhos[i + 1];
-        const endTime = next ? new Date(next.time).getTime() : Date.now();
-        const durationMs = endTime - new Date(current.time).getTime();
-        const durationMins = Math.floor(durationMs / 60000);
-
-        durations[current.j] = (durations[current.j] || 0) + durationMins;
-      }
-      return durations;
-    }
-
-    function renderPerformance(){
-      const container = document.getElementById('performanceStats');
-      container.innerHTML = '<h3>Tempo Gasto por Viatura em Empenhos J</h3>';
-
-      let totalMinutes = 0;
-      let vtrPerformance = [];
-
-      session.selectedUnits.forEach(uk => {
-        unitsData[uk]?.vtrs.forEach(vtr => {
-          if(vtr.empenhos.length === 0) return;
-          
-          const durations = calculateEmpenhoDuration(vtr.empenhos);
-          const totalVtrMins = Object.values(durations).reduce((a, b) => a + b, 0);
-          totalMinutes += totalVtrMins;
-
-          vtrPerformance.push({
-            id: vtr.id,
-            unit: units[uk],
-            durations,
-            totalMins: totalVtrMins
-          });
-        });
-      });
-
-      if(vtrPerformance.length === 0){
-        container.innerHTML += '<div style="color:var(--muted);text-align:center;padding:20px">Sem dados de empenho para analisar.</div>';
-        return;
-      }
-
-      const totalDurationFormatted = timeDifference(0, totalMinutes * 60000);
-      container.innerHTML += `<p class="chip" style="margin-bottom:16px;">Total Geral de Tempo Registrado: <strong>${totalDurationFormatted}</strong></p>`;
-
-      const table = document.createElement('table');
-      table.style.width = '100%';
-      table.style.borderCollapse = 'collapse';
-      table.innerHTML = `
-        <thead>
-          <tr style="background:rgba(255,255,255,0.05);">
-            <th style="padding:10px;text-align:left;">Viatura (Unidade)</th>
-            <th style="padding:10px;">J1 (Ativ. Fim)</th>
-            <th style="padding:10px;">J9/J10 (Ocorr.)</th>
-            <th style="padding:10px;">J4/J5 (Apoio)</th>
-            <th style="padding:10px;color:var(--accent);">Tempo Total</th>
-          </tr>
-        </thead>
-        <tbody id="performanceBody"></tbody>
-      `;
-      container.appendChild(table);
-      const tbody = document.getElementById('performanceBody');
-
-      vtrPerformance.sort((a,b) => b.totalMins - a.totalMins).forEach(p => {
-        const totalJ1 = p.durations.J1 || 0;
-        const totalOcorr = (p.durations.J9 || 0) + (p.durations.J10 || 0) + (p.durations.J11 || 0);
-        const totalApoio = (p.durations.J4 || 0) + (p.durations.J5 || 0);
-        
-        const row = tbody.insertRow();
-        row.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
-
-        row.insertCell().innerHTML = `<strong>${p.id}</strong> (${p.unit})`;
-        row.insertCell().textContent = totalJ1 > 0 ? timeDifference(0, totalJ1 * 60000) : '-';
-        row.insertCell().textContent = totalOcorr > 0 ? timeDifference(0, totalOcorr * 60000) : '-';
-        row.insertCell().textContent = totalApoio > 0 ? timeDifference(0, totalApoio * 60000) : '-';
-        row.insertCell().innerHTML = `<strong style="color:var(--accent);">${timeDifference(0, p.totalMins * 60000)}</strong>`;
-        
-        Array.from(row.cells).forEach(cell => cell.style.padding = '10px');
-        Array.from(row.cells).slice(1).forEach(cell => cell.style.textAlign = 'center');
-      });
-    }
-
-
-    // ====== EXPORTAÇÃO (PDF / CSV) ======
-
-    document.getElementById('exportPdf').addEventListener('click', exportPdf);
-    document.getElementById('exportCsv').addEventListener('click', exportCsv);
-
-    function exportPdf(){
-      const {jsPDF} = window.jspdf;
-      const doc = new jsPDF('p', 'mm', 'a4');
-      let y = 10;
-      const lineHeight = 5;
-      const pageHeight = doc.internal.pageSize.height;
-      
-      doc.setFontSize(16);
-      doc.text('Mapa da Força - Relatório de Controle', 10, y);
-      y += lineHeight * 2;
-      
-      doc.setFontSize(10);
-      doc.text(`Operador: ${session.operator}`, 10, y); y += lineHeight;
-      doc.text(`Início da Sessão: ${new Date(session.datetime).toLocaleString('pt-BR')}`, 10, y); y += lineHeight * 2;
-
-      doc.setFontSize(12);
-      
-      session.selectedUnits.forEach(uk => {
-        const unitVtrs = unitsData[uk]?.vtrs || [];
-        if(unitVtrs.length === 0) return;
-
-        if(y > pageHeight - 30){ doc.addPage(); y = 10; }
-        
-        doc.setFontSize(14);
-        doc.text(`Unidade: ${units[uk]}`, 10, y); y += lineHeight * 1.5;
-        doc.setFontSize(10);
-
-        unitVtrs.forEach(vtr => {
-          if(y > pageHeight - 30){ doc.addPage(); y = 10; }
-          
-          doc.text(`Viatura: ${vtr.id} (Serviço: ${vtr.service}) - Tel: ${vtr.phone || '-'}`, 15, y, {fontStyle: 'bold'}); y += lineHeight;
-
-          doc.text(`Tripulação: ${vtr.crew.map(m => `${m.rank} ${m.name}`).join(', ')}`, 15, y); y += lineHeight;
-          
-          doc.text('Histórico de Empenhos:', 15, y); y += lineHeight;
-          
-          vtr.empenhos.forEach(emp => {
-            if(y > pageHeight - 30){ doc.addPage(); y = 10; }
-            
-            const time = new Date(emp.time).toLocaleString('pt-BR');
-            const description = `${getJText(emp.j)} (Prot: ${emp.protocol || '-'})`;
-            
-            doc.text(`- ${time}: ${description}`, 20, y); y += lineHeight;
-            if(emp.actions){
-              const actionsLines = doc.splitTextToSize(`Ações: ${emp.actions}`, 170);
-              doc.text(actionsLines, 25, y);
-              y += actionsLines.length * lineHeight;
-            }
-          });
-          y += lineHeight; // Espaço após a viatura
-        });
-      });
-
-      doc.save(`Relatorio_Mapa_Forca_${session.operator}_${new Date().toISOString().slice(0, 10)}.pdf`);
-    }
-
-    function exportCsv(){
-      let csv = 'Unidade;Viatura;Serviço;Posto/Graduação;Nome de Guerra;Telefone;Tipo de Empenho;Horário;Protocolo;Ações\n';
-
-      session.selectedUnits.forEach(uk => {
-        unitsData[uk]?.vtrs.forEach(vtr => {
-          const baseRow = `${units[uk]};${vtr.id};${vtr.service};;;${vtr.phone || '-'};;;;`;
-          
-          // Adiciona a tripulação
-          vtr.crew.forEach(member => {
-            csv += `${units[uk]};${vtr.id};${vtr.service};${member.rank};${member.name};${vtr.phone || '-'};;;;\n`;
-          });
-          
-          // Adiciona os empenhos
-          vtr.empenhos.forEach(emp => {
-            const time = new Date(emp.time).toLocaleString('pt-BR');
-            const actions = (emp.actions || '').replace(/"/g, '""');
-            
-            csv += `${units[uk]};${vtr.id};${vtr.service};;;${vtr.phone || '-'};"${getJText(emp.j)}";${time};${emp.protocol || '-'};"${actions}"\n`;
-          });
-        });
-      });
-
-      const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `Relatorio_Mapa_Forca_${session.operator}_${new Date().toISOString().slice(0, 10)}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-
-  </script>
+
+        // ====== Função para Finalizar Sessão ======
+        document.getElementById('finishBtn').addEventListener('click', finishSession);
+
+        function finishSession() {
+            if (!confirm('Deseja realmente finalizar o turno atual? Todos os dados em tempo real serão zerados (mas permanecerão no histórico se salvos).')) {
+                return;
+            }
+
+            clearInterval(timerInterval); 
+
+            session = {operator:'',datetime:'',selectedUnits:[],id:null};
+            unitsData = {};
+            alertsShown = new Set();
+            
+            localStorage.removeItem('currentSession');
+
+            document.getElementById('screen2').style.display = 'none';
+            document.getElementById('screen1').style.display = 'block';
+
+            document.getElementById('operatorName').value = '';
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('dateTime').value = now.toISOString().slice(0,16);
+            
+            Array.from(document.querySelectorAll('#unitsMultiSelect input:checked')).forEach(cb => cb.checked = false);
+
+
+            alert('Turno finalizado com sucesso! Pronto para iniciar um novo Mapa da Força.');
+        }
+
+        // ====== Dashboard ======
+        function updateDashboard(){
+            let totalVtrs = 0;
+            let totalEmpenhos = 0;
+            let empenhoCounts = {};
+            let activeVtrs = 0;
+
+            session.selectedUnits.forEach(uk=>{
+                const vtrs = unitsData[uk]?.vtrs || [];
+                totalVtrs += vtrs.length;
+                
+                vtrs.forEach(vtr=>{
+                    if(vtr.empenhos && vtr.empenhos.length > 0){
+                        activeVtrs++;
+                        totalEmpenhos += vtr.empenhos.length;
+                        const lastEmpenho = vtr.empenhos[vtr.empenhos.length - 1];
+                        empenhoCounts[lastEmpenho.j] = (empenhoCounts[lastEmpenho.j] || 0) + 1;
+                    }
+                });
+            });
+
+            const topJ = Object.entries(empenhoCounts).sort((a,b)=>b[1]-a[1])[0];
+
+            const dashboard = document.getElementById('dashboardStats');
+            dashboard.innerHTML = `
+                <div class="stat-card" style="cursor:pointer;" onclick="openDetailsModal('total')">
+                    <div class="stat-label">Viaturas Total</div>
+                    <div class="stat-value">${totalVtrs}</div>
+                </div>
+                <div class="stat-card" style="cursor:pointer;" onclick="openDetailsModal('active')">
+                    <div class="stat-label">Viaturas Ativas</div>
+                    <div class="stat-value">${activeVtrs}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Empenhos Total</div>
+                    <div class="stat-value">${totalEmpenhos}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">J Mais Usado</div>
+                    <div class="stat-value" style="font-size:24px">${topJ ? topJ[0] : '-'}</div>
+                </div>
+            `;
+        }
+        
+        // ====== Funções do Modal de Detalhes da VTR ======
+        function openDetailsModal(type) {
+            const modal = document.getElementById('detailsModal');
+            const title = document.getElementById('detailsModalTitle');
+            const content = document.getElementById('detailsModalContent');
+            content.innerHTML = '';
+
+            title.textContent = type === 'total' ? 'Detalhes: Todas as Viaturas' : 'Detalhes: Viaturas Ativas';
+
+            let allVtrs = [];
+            session.selectedUnits.forEach(uk => {
+                const unitName = units[uk];
+                const vtrs = unitsData[uk]?.vtrs || [];
+
+                vtrs.forEach(vtr => {
+                    const lastEmpenho = vtr.empenhos.length > 0 ? vtr.empenhos[vtr.empenhos.length - 1] : null;
+
+                    if (type === 'total' || (type === 'active' && lastEmpenho)) {
+                        allVtrs.push({
+                            id: vtr.id,
+                            unit: unitName,
+                            lastEmpenho: lastEmpenho
+                        });
+                    }
+                });
+            });
+
+            if (allVtrs.length === 0) {
+                content.innerHTML = '<p class="small" style="text-align:center;padding:20px;">Nenhuma viatura encontrada para este filtro.</p>';
+                modal.classList.add('active');
+                return;
+            }
+
+            allVtrs.forEach(vtr => {
+                const item = document.createElement('div');
+                const isAlert = vtr.lastEmpenho && ALERT_THRESHOLDS[vtr.lastEmpenho.j] && (Date.now() - new Date(vtr.lastEmpenho.time)) / 60000 > ALERT_THRESHOLDS[vtr.lastEmpenho.j];
+                item.className = 'vtr-item' + (isAlert ? ' alert' : '');
+                
+                let statusHtml = '<div class="j-counter" style="background:rgba(255,255,255,0.1);color:var(--muted)">Sem Empenho J</div>';
+                let service = vtr.lastEmpenho ? vtr.lastEmpenho.j : 'N/A';
+                
+                if (vtr.lastEmpenho) {
+                    const duration = timeDifference(vtr.lastEmpenho.time);
+                    const currentClass = isAlert ? 'alert-badge' : 'empenho-current';
+                    
+                    statusHtml = `
+                        <div class="vtr-badges">
+                            <span class="vtr-service">${service}</span>
+                            <span class="j-counter ${currentClass}">${duration}</span>
+                        </div>
+                    `;
+                }
+
+                item.innerHTML = `
+                    <div class="vtr-header">
+                        <div class="vtr-id">
+                            ${vtr.id}
+                            ${isAlert ? '<span class="alert-badge">ALERTA TEMPO!</span>' : ''}
+                        </div>
+                        ${statusHtml}
+                    </div>
+                    <div class="small">
+                        Unidade: **${vtr.unit}** | Serviço: ${vtr.lastEmpenho ? getJText(vtr.lastEmpenho.j) : 'VTR em Base/Sem J Ativo'}
+                    </div>
+                    ${vtr.lastEmpenho ? `<div class="small" style="margin-top:4px;">Início: ${formatTime(vtr.lastEmpenho.time)} ${vtr.lastEmpenho.protocol ? `| Protocolo: <span class="protocol-badge">${vtr.lastEmpenho.protocol}</span>` : ''}</div>` : ''}
+                `;
+                content.appendChild(item);
+            });
+
+            modal.classList.add('active');
+        }
+
+        function closeDetailsModal() {
+            document.getElementById('detailsModal').classList.remove('active');
+        }
+
+        // ====== Alertas e Timers ======
+        function startTimers(){
+            if(timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                renderUnits(); 
+                checkTimeAlerts(); 
+            }, 5000);
+        }
+
+        function checkTimeAlerts(){
+            const now = Date.now();
+            session.selectedUnits.forEach(uk=>{
+                const vtrs = unitsData[uk]?.vtrs || [];
+                vtrs.forEach((vtr,idx)=>{
+                    if(!vtr.empenhos || vtr.empenhos.length === 0) return;
+                    
+                    const lastEmpenho = vtr.empenhos[vtr.empenhos.length - 1];
+                    const duration = (now - new Date(lastEmpenho.time)) / 60000;
+                    const threshold = ALERT_THRESHOLDS[lastEmpenho.j];
+                    
+                    const alertKey = `${uk}-${idx}-${lastEmpenho.time}`;
+                    
+                    if(threshold && duration > threshold && !alertsShown.has(alertKey)){
+                        alertsShown.add(alertKey);
+                        showAlert(vtr.id, lastEmpenho.j, Math.floor(duration));
+                    }
+                });
+            });
+        }
+
+        function showAlert(vtrId, j, mins){
+            if(Notification.permission === 'granted'){
+                new Notification('⚠️ Alerta de Tempo', {
+                    body: `${vtrId} está em ${j} há ${mins} minutos`,
+                    icon: '🚔'
+                });
+            }
+            console.warn(`ALERTA: ${vtrId} em ${j} há ${mins} min`);
+        }
+
+        if('Notification' in window && Notification.permission === 'default'){
+            Notification.requestPermission();
+        }
+
+        // ====== Gerenciamento de VTRs (Funções OMITIDAS para brevidade - mantidas na versão completa) ======
+        // ... (openVtrModal, closeVtrModal, addCrewInput, saveVtr, deleteVtr)
+
+        // ====== Gerenciamento de Empenhos J (Funções OMITIDAS para brevidade - mantidas na versão completa) ======
+        // ... (openEmpenhoModal, closeEmpenhoModal, saveEmpenho)
+        
+        // **Implementação das funções de VTR e Empenho (Mantidas no final do seu código)**
+
+        function openVtrModal(unitKey, vtrIndex = null){
+            const modal = document.getElementById('vtrModal');
+            const container = document.getElementById('crewInputsContainer');
+            container.innerHTML = '';
+            editingVtr = {unitKey, vtrIndex};
+
+            if(vtrIndex !== null){
+                const vtr = unitsData[unitKey].vtrs[vtrIndex];
+                document.getElementById('modalTitle').textContent = `Editar Viatura: ${vtr.id}`;
+                document.getElementById('modalVtrId').value = vtr.id;
+                document.getElementById('modalServiceType').value = vtr.service;
+                document.getElementById('modalVtrPhone').value = vtr.phone || '';
+                vtr.crew.forEach(member => addCrewInput(member.name, member.rank));
+            } else {
+                document.getElementById('modalTitle').textContent = `Adicionar Viatura em ${units[unitKey]}`;
+                document.getElementById('modalVtrId').value = '';
+                document.getElementById('modalServiceType').value = 'ORDINARIO';
+                document.getElementById('modalVtrPhone').value = '';
+                for(let i=0; i<3; i++) addCrewInput(); 
+            }
+            modal.classList.add('active');
+        }
+
+        function closeVtrModal(){
+            document.getElementById('vtrModal').classList.remove('active');
+            editingVtr = null;
+        }
+
+        document.getElementById('addCrewMember').addEventListener('click', () => addCrewInput());
+
+        function addCrewInput(name = '', rank = ''){
+            const container = document.getElementById('crewInputsContainer');
+            if(container.children.length >= 5) return;
+            
+            const idx = container.children.length;
+            const div = document.createElement('div');
+            div.className = 'crew-input-group';
+            div.innerHTML = `
+                <div class="crew-input-header">
+                    <h4>Membro ${idx + 1}</h4>
+                    ${idx > 0 ? `<button type="button" class="danger small" onclick="this.closest('.crew-input-group').remove()">Remover</button>` : ''}
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <label>Posto/Graduação</label>
+                        <input type="text" class="crew-rank" value="${rank}" placeholder="Ex: Cap, Sgt, Sd" />
+                    </div>
+                    <div class="col">
+                        <label>Nome de Guerra</label>
+                        <input type="text" class="crew-name" value="${name}" placeholder="Ex: Silva, Junior" />
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        document.getElementById('saveVtrBtn').addEventListener('click', saveVtr);
+
+        function saveVtr(){
+            const {unitKey, vtrIndex} = editingVtr;
+            const id = document.getElementById('modalVtrId').value.trim();
+            const service = document.getElementById('modalServiceType').value;
+            const phone = document.getElementById('modalVtrPhone').value.trim();
+            
+            const crew = Array.from(document.querySelectorAll('#crewInputsContainer .crew-input-group')).map(group => ({
+                rank: group.querySelector('.crew-rank').value.trim(),
+                name: group.querySelector('.crew-name').value.trim(),
+            })).filter(m => m.rank || m.name);
+
+            if(!id){
+                alert('A Identificação da Viatura é obrigatória.');
+                return;
+            }
+
+            const newVtr = {
+                id, service, crew, phone, unitKey,
+                empenhos: vtrIndex !== null ? unitsData[unitKey].vtrs[vtrIndex].empenhos : []
+            };
+
+            if(vtrIndex !== null){
+                unitsData[unitKey].vtrs[vtrIndex] = newVtr;
+            } else {
+                if(unitsData[unitKey].vtrs.some(v => v.id === id)){
+                    alert(`A viatura com ID "${id}" já existe na unidade ${units[unitKey]}.`);
+                    return;
+                }
+                unitsData[unitKey].vtrs.push(newVtr);
+            }
+
+            closeVtrModal();
+            renderUnits();
+            updateDashboard();
+            saveToLocal();
+        }
+
+        function deleteVtr(unitKey, vtrIndex){
+            if(confirm(`Tem certeza que deseja remover a viatura ${unitsData[unitKey].vtrs[vtrIndex].id}?`)){
+                unitsData[unitKey].vtrs.splice(vtrIndex, 1);
+                renderUnits();
+                updateDashboard();
+                saveToLocal();
+            }
+        }
+
+        function openEmpenhoModal(unitKey, vtrIndex){
+            currentVtrForEmpenho = {unitKey, vtrIndex};
+            const vtr = unitsData[unitKey].vtrs[vtrIndex];
+            document.getElementById('modalVtrName').textContent = vtr.id;
+            document.getElementById('modalEmpenhoJ').value = 'J1'; 
+            document.getElementById('modalProtocol').value = '';
+            document.getElementById('modalActions').value = '';
+            document.getElementById('empenhoModal').classList.add('active');
+        }
+
+        function closeEmpenhoModal(){
+            document.getElementById('empenhoModal').classList.remove('active');
+            currentVtrForEmpenho = null;
+        }
+
+        document.getElementById('saveEmpenhoBtn').addEventListener('click', saveEmpenho);
+
+        function saveEmpenho(){
+            if(!currentVtrForEmpenho) return;
+            const {unitKey, vtrIndex} = currentVtrForEmpenho;
+            const vtr = unitsData[unitKey].vtrs[vtrIndex];
+
+            const j = document.getElementById('modalEmpenhoJ').value;
+            const protocol = document.getElementById('modalProtocol').value.trim();
+            const actions = document.getElementById('modalActions').value.trim();
+            const now = new Date().toISOString();
+
+            const newEmpenho = {
+                j,
+                time: now,
+                protocol: protocol || null,
+                actions: actions || null
+            };
+
+            vtr.empenhos.push(newEmpenho);
+            closeEmpenhoModal();
+            renderUnits();
+            updateDashboard();
+            saveToLocal();
+        }
+
+        // ====== Renderização e Filtro ======
+        function renderUnits(){
+            const container = document.getElementById('unitsContainer');
+            container.innerHTML = '';
+            const search = document.getElementById('searchVtr').value.toLowerCase();
+            const filterService = document.getElementById('filterService').value;
+            const filterUnit = document.getElementById('filterUnit').value;
+
+            session.selectedUnits.forEach(uk => {
+                if(filterUnit && filterUnit !== uk) return;
+
+                const unitContainer = document.createElement('div');
+                unitContainer.className = 'unit-card';
+                unitContainer.innerHTML = `
+                    <div class="unit-header">
+                        <div class="unit-title">
+                            ${units[uk]}
+                            <span class="small" id="vtrCount-${uk}">(${unitsData[uk].vtrs.length} Viaturas)</span>
+                        </div>
+                        <button class="small" onclick="openVtrModal('${uk}', null)">+ Nova VTR</button>
+                    </div>
+                    <div class="vtr-list" id="vtrList-${uk}"></div>
+                `;
+                container.appendChild(unitContainer);
+
+                const vtrList = document.getElementById(`vtrList-${uk}`);
+                let unitVtrCount = 0;
+                
+                unitsData[uk].vtrs.forEach((vtr, vtrIndex) => {
+                    if(filterService && filterService !== vtr.service) return;
+                    if(search && !vtr.id.toLowerCase().includes(search) && !vtr.crew.some(m => m.name.toLowerCase().includes(search))) return;
+                    
+                    unitVtrCount++;
+
+                    const lastEmpenho = vtr.empenhos[vtr.empenhos.length - 1];
+                    const isAlert = lastEmpenho && ALERT_THRESHOLDS[lastEmpenho.j] && (Date.now() - new Date(lastEmpenho.time)) / 60000 > ALERT_THRESHOLDS[lastEmpenho.j];
+
+                    const vtrItem = document.createElement('div');
+                    vtrItem.className = 'vtr-item' + (isAlert ? ' alert' : '');
+                    
+                    const currentEmpenhoHtml = lastEmpenho ? `
+                        <div class="vtr-badges">
+                            <span class="vtr-service">${vtr.service}</span>
+                            <span class="j-counter">${lastEmpenho.j} - ${getJText(lastEmpenho.j).split(': ')[1] || ''}</span>
+                            ${isAlert ? '<span class="alert-badge">ALERTA</span>' : ''}
+                        </div>
+                        <div class="empenho-duration empenho-current" data-time="${lastEmpenho.time}">
+                            ${timeDifference(lastEmpenho.time)}
+                        </div>
+                    ` : `
+                        <div class="vtr-badges">
+                            <span class="vtr-service">${vtr.service}</span>
+                            <span class="j-counter" style="background:rgba(255,255,255,0.1);color:var(--muted)">Em Base/Sem J</span>
+                        </div>
+                    `;
+
+                    const crewNames = vtr.crew.map(m => `
+                        <div class="crew-member"><strong>${m.rank}</strong> ${m.name}</div>
+                    `).join('');
+
+                    const timelineHtml = vtr.empenhos.slice(-3).reverse().map(emp => `
+                        <div class="empenho-entry">
+                            <div class="empenho-time">${formatTime(emp.time)}</div>
+                            <div class="empenho-info">
+                                <div class="empenho-label">
+                                    ${emp.j}: ${getJText(emp.j).split(': ')[1]}
+                                </div>
+                                ${emp.protocol ? `<span class="protocol-badge">${emp.protocol}</span>` : ''}
+                                ${emp.actions ? `<div class="empenho-details">${emp.actions}</div>` : ''}
+                            </div>
+                        </div>
+                    `).join('');
+
+
+                    vtrItem.innerHTML = `
+                        <div class="vtr-header">
+                            <div class="vtr-id">
+                                🚔 ${vtr.id}
+                            </div>
+                            ${currentEmpenhoHtml}
+                        </div>
+
+                        <div class="crew-list">
+                            ${crewNames || '<div class="small">Sem equipe cadastrada</div>'}
+                            ${vtr.phone ? `<div class="small" style="margin-top:4px;">📞 ${vtr.phone}</div>` : ''}
+                        </div>
+
+                        <div class="empenhos-timeline">
+                            <h3 style="margin:0;font-size:12px;color:var(--muted)">Últimos Empenhos:</h3>
+                            ${timelineHtml || '<div class="small" style="padding:8px 0;">Nenhum empenho registrado.</div>'}
+                        </div>
+
+                        <div class="vtr-actions">
+                            <button class="small success" onclick="openEmpenhoModal('${uk}', ${vtrIndex})">J +</button>
+                            <button class="small ghost" onclick="openVtrModal('${uk}', ${vtrIndex})">Editar</button>
+                            <button class="small danger" onclick="deleteVtr('${uk}', ${vtrIndex})">Excluir</button>
+                        </div>
+                    `;
+
+                    vtrList.appendChild(vtrItem);
+                });
+                
+                document.getElementById(`vtrCount-${uk}`).textContent = `(${unitVtrCount} Viaturas)`;
+            });
+        }
+        
+        // Atribui listeners aos filtros
+        document.getElementById('searchVtr').addEventListener('input', renderUnits);
+        document.getElementById('filterService').addEventListener('change', renderUnits);
+        document.getElementById('filterUnit').addEventListener('change', renderUnits);
+
+        // Funções placeholders para modais futuros (sessões)
+        function openSessionsModal() { document.getElementById('sessionsModal').classList.add('active'); }
+        function closeSessionsModal() { document.getElementById('sessionsModal').classList.remove('active'); }
+        
+        document.getElementById('openSessionsBtn').addEventListener('click', openSessionsModal);
+
+        // ====== Funções de Estatísticas e Análise ======
+        document.getElementById('openStatsBtn').addEventListener('click', openStatsModal);
+
+        function openStatsModal() {
+            document.getElementById('statsModal').classList.add('active');
+            switchTab('charts');
+            generateStatistics();
+            drawCharts();
+            generatePerformanceStats();
+        }
+
+        function closeStatsModal() {
+            document.getElementById('statsModal').classList.remove('active');
+        }
+
+        function generateStatistics() {
+            const stats = {
+                empenhoCounts: {}, 
+                hourCounts: {},    
+                durations: [],     
+            };
+
+            session.selectedUnits.forEach(uk => {
+                const vtrs = unitsData[uk]?.vtrs || [];
+                vtrs.forEach(vtr => {
+                    vtr.empenhos.forEach((empenho, index) => {
+                        stats.empenhoCounts[empenho.j] = (stats.empenhoCounts[empenho.j] || 0) + 1;
+
+                        const hour = new Date(empenho.time).getHours();
+                        stats.hourCounts[hour] = (stats.hourCounts[hour] || 0) + 1;
+
+                        if (index > 0) {
+                            const prevEmpenho = vtr.empenhos[index - 1];
+                            const startTime = new Date(prevEmpenho.time).getTime();
+                            const endTime = new Date(empenho.time).getTime();
+                            const durationMins = Math.floor((endTime - startTime) / 60000);
+                            stats.durations.push({
+                                j: prevEmpenho.j,
+                                duration: durationMins
+                            });
+                        }
+                    });
+                });
+            });
+
+            return stats;
+        }
+
+        function drawCharts() {
+            const stats = generateStatistics();
+
+            if (empenhosChart) empenhosChart.destroy();
+            const empenhoLabels = Object.keys(stats.empenhoCounts).sort();
+            const empenhoData = empenhoLabels.map(label => stats.empenhoCounts[label]);
+
+            const ctxEmpenhos = document.getElementById('chartEmpenhos').getContext('2d');
+            empenhosChart = new Chart(ctxEmpenhos, {
+                type: 'bar',
+                data: {
+                    labels: empenhoLabels,
+                    datasets: [{
+                        label: 'Ocorrências/Atividades',
+                        data: empenhoData,
+                        backgroundColor: 'rgba(6, 182, 212, 0.6)',
+                        borderColor: 'rgba(6, 182, 212, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { color: 'var(--muted)' } },
+                        x: { ticks: { color: 'var(--muted)' } }
+                    }
+                }
+            });
+
+            if (horarioChart) horarioChart.destroy();
+            const hourLabels = Array.from({ length: 24 }, (_, i) => `${i}h`);
+            const hourData = hourLabels.map((_, i) => stats.hourCounts[i] || 0);
+
+            const ctxHorario = document.getElementById('chartHorario').getContext('2d');
+            horarioChart = new Chart(ctxHorario, {
+                type: 'line',
+                data: {
+                    labels: hourLabels,
+                    datasets: [{
+                        label: 'Total de Empenhos',
+                        data: hourData,
+                        borderColor: 'var(--warning)',
+                        backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                        tension: 0.2,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { color: 'var(--muted)' } },
+                        x: { ticks: { color: 'var(--muted)' } }
+                    }
+                }
+            });
+        }
+
+        function generatePerformanceStats() {
+            const stats = generateStatistics();
+            const container = document.getElementById('performanceStats');
+            container.innerHTML = '';
+
+            const duracoesJ = {}; 
+            stats.durations.forEach(d => {
+                if (!duracoesJ[d.j]) duracoesJ[d.j] = [];
+                duracoesJ[d.j].push(d.duration);
+            });
+
+            let totalEmpenhosFinalizados = stats.durations.length;
+            let totalTempo = stats.durations.reduce((acc, curr) => acc + curr.duration, 0);
+
+            const performanceHtml = `
+                <div class="card" style="margin-bottom:12px;display:flex;gap:16px;justify-content:space-around;">
+                    <div style="text-align:center;">
+                        <div class="stat-label">Total de Empenhos Finalizados</div>
+                        <div class="stat-value" style="font-size:24px;color:var(--success);">${totalEmpenhosFinalizados}</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div class="stat-label">Tempo Médio Total (min)</div>
+                        <div class="stat-value" style="font-size:24px;color:var(--accent);">${totalEmpenhosFinalizados > 0 ? Math.round(totalTempo / totalEmpenhosFinalizados) : 0}m</div>
+                    </div>
+                </div>
+
+                <h3>Tempo Médio por Tipo de Empenho (J)</h3>
+                <table style="width:100%;border-collapse:collapse;text-align:left;">
+                    <thead>
+                        <tr style="background:rgba(255,255,255,0.05);">
+                            <th style="padding:10px;">Empenho J</th>
+                            <th style="padding:10px;">Descrição</th>
+                            <th style="padding:10px;">Qtd. de Registros</th>
+                            <th style="padding:10px;">Média (min)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${Object.entries(duracoesJ).map(([j, durations]) => {
+                            const totalDuracao = durations.reduce((a, b) => a + b, 0);
+                            const media = Math.round(totalDuracao / durations.length);
+                            return `
+                                <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                                    <td style="padding:10px;font-weight:600;">${j}</td>
+                                    <td style="padding:10px;font-size:13px;color:var(--muted);">${getJText(j).split(': ')[1]}</td>
+                                    <td style="padding:10px;">${durations.length}</td>
+                                    <td style="padding:10px;font-weight:600;color:var(--warning);">${media}m</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+                ${totalEmpenhosFinalizados === 0 ? '<p class="small" style="padding:20px;text-align:center;">Não há empenhos finalizados (com dois registros) para calcular a performance.</p>' : ''}
+            `;
+
+            container.innerHTML = performanceHtml;
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            document.querySelector(`.tab[onclick="switchTab('${tabId}')"`).classList.add('active');
+            
+            if (tabId === 'charts') {
+                drawCharts();
+            } else if (tabId === 'performance') {
+                generatePerformanceStats();
+            }
+        }
+        
+        // ====== Funções de Exportação (CSV e PDF) ======
+
+        function getFullEmpenhoData() {
+            let data = [];
+            session.selectedUnits.forEach(uk => {
+                const unitName = units[uk];
+                unitsData[uk]?.vtrs.forEach(vtr => {
+                    vtr.empenhos.forEach(empenho => {
+                        data.push({
+                            'ID_SESSAO': session.id,
+                            'UNIDADE': unitName,
+                            'ID_VTR': vtr.id,
+                            'SERVICO_VTR': vtr.service,
+                            'J': empenho.j,
+                            'DESCRICAO_J': getJText(empenho.j).split(': ')[1],
+                            'HORA_INICIO': new Date(empenho.time).toLocaleString('pt-BR'),
+                            'PROTOCOLO': empenho.protocol || '',
+                            'ACOES_EMPREGADAS': empenho.actions ? empenho.actions.replace(/(\r\n|\n|\r)/gm, " ").trim() : ''
+                        });
+                    });
+                });
+            });
+            return data;
+        }
+
+        document.getElementById('exportCsv').addEventListener('click', exportCsv);
+
+        function exportCsv() {
+            const data = getFullEmpenhoData();
+            if (data.length === 0) {
+                alert('Nenhum dado de empenho para exportar.');
+                return;
+            }
+
+            const headers = Object.keys(data[0]);
+            
+            let csv = [
+                headers.join(';') 
+            ];
+            
+            data.forEach(row => {
+                const values = headers.map(header => {
+                    let val = row[header];
+                    if (typeof val === 'string' && (val.includes(';') || val.includes('\n'))) {
+                         val = `"${val.replace(/"/g, '""')}"`;
+                    }
+                    return val;
+                });
+                csv.push(values.join(';'));
+            });
+            
+            const csvContent = "\ufeff" + csv.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `Mapa_Forca_Empenhos_${session.id}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            alert('Exportação CSV concluída com sucesso!');
+        }
+
+        document.getElementById('exportPdf').addEventListener('click', exportPdf);
+
+        function exportPdf() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            let y = 10;
+            
+            doc.setFontSize(16);
+            doc.text('Relatório do Mapa da Força', 10, y);
+            y += 8;
+            
+            doc.setFontSize(10);
+            doc.text(`Operador: ${session.operator}`, 10, y);
+            doc.text(`Início do Turno: ${new Date(session.datetime).toLocaleString('pt-BR')}`, 100, y);
+            y += 5;
+            
+            const totalVtrs = document.querySelector('[onclick="openDetailsModal(\'total\')"] .stat-value').textContent;
+            const activeVtrs = document.querySelector('[onclick="openDetailsModal(\'active\')"] .stat-value').textContent;
+            doc.text(`Viaturas Total: ${totalVtrs} | Viaturas Ativas: ${activeVtrs}`, 10, y);
+            y += 10;
+            
+            const empenhoData = getFullEmpenhoData();
+            const tableColumns = [
+                { header: 'ID VTR', dataKey: 'ID_VTR' },
+                { header: 'Unidade', dataKey: 'UNIDADE' },
+                { header: 'J', dataKey: 'J' },
+                { header: 'Início', dataKey: 'HORA_INICIO' },
+                { header: 'Protocolo', dataKey: 'PROTOCOLO' },
+                { header: 'Ações', dataKey: 'ACOES_EMPREGADAS' },
+            ];
+            
+            const tableRows = empenhoData.map(row => tableColumns.map(col => row[col.dataKey]));
+            
+            doc.setFontSize(12);
+            doc.text('Tabela Detalhada de Empenhos Registrados:', 10, y);
+            y += 5;
+
+            doc.autoTable({
+                startY: y,
+                head: [tableColumns.map(c => c.header)],
+                body: tableRows,
+                styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+                headStyles: { fillColor: [6, 182, 212] },
+                margin: { top: 10, left: 10, right: 10 },
+                columnStyles: {
+                    4: { cellWidth: 30 }, 
+                    5: { cellWidth: 50 }  
+                }
+            });
+
+            doc.save(`Mapa_Forca_Relatorio_${session.id}.pdf`);
+            alert('Exportação PDF concluída com sucesso!');
+        }
+
+    </script>
 </body>
 </html>
