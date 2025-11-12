@@ -112,6 +112,47 @@
         .tab-content{display:none}
         .tab-content.active{display:block}
         
+        /* Estilo para a lista de ocorrências */
+        .occurrence-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--warning);
+        }
+        .occurrence-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .occurrence-vtr {
+            font-weight: 700;
+            color: var(--accent);
+            font-size: 15px;
+        }
+        .occurrence-j {
+            font-weight: 600;
+            color: var(--warning);
+            font-size: 13px;
+        }
+        .occurrence-protocol {
+            background: var(--glass);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #a78bfa;
+            font-weight: 600;
+        }
+        .occurrence-actions {
+            font-size: 13px;
+            color: #e6eef6;
+            white-space: pre-wrap; /* Preserva quebras de linha */
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.1);
+        }
+        
         @media (max-width:700px){.row{flex-direction:column}.dashboard-grid{grid-template-columns:1fr}}
     </style>
 </head>
@@ -295,6 +336,7 @@
                 <div class="tabs">
                     <button class="tab active" onclick="switchTab('charts')">📈 Gráficos</button>
                     <button class="tab" onclick="switchTab('performance')">⏱️ Desempenho</button>
+                    <button class="tab" onclick="switchTab('occurrences')">🚨 Ocorrências</button>
                 </div>
 
                 <div class="tab-content active" id="tab-charts">
@@ -310,6 +352,12 @@
 
                 <div class="tab-content" id="tab-performance">
                     <div id="performanceStats"></div>
+                </div>
+                
+                <div class="tab-content" id="tab-occurrences">
+                    <h3 style="margin-bottom:16px;">Registros de Ocorrências com Ações e Protocolos</h3>
+                    <div id="occurrenceList">
+                        </div>
                 </div>
             </div>
         </div>
@@ -351,8 +399,8 @@
         let currentVtrForEmpenho = null;
         let timerInterval = null;
         let alertsShown = new Set();
-        let empenhosChart = null; // Para o Chart.js
-        let horarioChart = null;  // Para o Chart.js
+        let empenhosChart = null; 
+        let horarioChart = null;  
 
         // ====== Inicialização ======
         (function init(){
@@ -646,7 +694,7 @@
             document.getElementById('detailsModal').classList.remove('active');
         }
 
-        // ====== Alertas e Timers ======
+        // ====== Alertas e Timers (Mantidos na íntegra) ======
         function startTimers(){
             if(timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(() => {
@@ -690,14 +738,7 @@
             Notification.requestPermission();
         }
 
-        // ====== Gerenciamento de VTRs (Funções OMITIDAS para brevidade - mantidas na versão completa) ======
-        // ... (openVtrModal, closeVtrModal, addCrewInput, saveVtr, deleteVtr)
-
-        // ====== Gerenciamento de Empenhos J (Funções OMITIDAS para brevidade - mantidas na versão completa) ======
-        // ... (openEmpenhoModal, closeEmpenhoModal, saveEmpenho)
-        
-        // **Implementação das funções de VTR e Empenho (Mantidas no final do seu código)**
-
+        // ====== Gerenciamento de VTRs (Mantidos na íntegra) ======
         function openVtrModal(unitKey, vtrIndex = null){
             const modal = document.getElementById('vtrModal');
             const container = document.getElementById('crewInputsContainer');
@@ -843,7 +884,7 @@
             saveToLocal();
         }
 
-        // ====== Renderização e Filtro ======
+        // ====== Renderização e Filtro (Mantidos na íntegra) ======
         function renderUnits(){
             const container = document.getElementById('unitsContainer');
             container.innerHTML = '';
@@ -960,15 +1001,17 @@
         
         document.getElementById('openSessionsBtn').addEventListener('click', openSessionsModal);
 
-        // ====== Funções de Estatísticas e Análise ======
+        // ====== Funções de Estatísticas e Análise - ATUALIZADAS ======
         document.getElementById('openStatsBtn').addEventListener('click', openStatsModal);
 
         function openStatsModal() {
             document.getElementById('statsModal').classList.add('active');
+            // Garante que a primeira aba esteja ativa ao abrir, mas gera todos os dados
             switchTab('charts');
             generateStatistics();
             drawCharts();
             generatePerformanceStats();
+            generateOcurrenceList(); // Chama a nova função
         }
 
         function closeStatsModal() {
@@ -1121,6 +1164,68 @@
 
             container.innerHTML = performanceHtml;
         }
+        
+        // ====== NOVA FUNÇÃO: Geração da Lista de Ocorrências ======
+        function generateOcurrenceList() {
+            const container = document.getElementById('occurrenceList');
+            container.innerHTML = '';
+            
+            const empenhosComDados = [];
+
+            session.selectedUnits.forEach(uk => {
+                const unitName = units[uk];
+                unitsData[uk]?.vtrs.forEach(vtr => {
+                    vtr.empenhos.forEach(empenho => {
+                        // Filtra apenas empenhos que possuem Protocolo ou Ações (que representam uma "Ocorrência")
+                        if (empenho.protocol || empenho.actions) {
+                            empenhosComDados.push({
+                                unit: unitName,
+                                vtrId: vtr.id,
+                                j: empenho.j,
+                                protocol: empenho.protocol,
+                                actions: empenho.actions,
+                                time: empenho.time
+                            });
+                        }
+                    });
+                });
+            });
+
+            // Ordena os empenhos pelo tempo (mais recente primeiro)
+            empenhosComDados.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+            if (empenhosComDados.length === 0) {
+                 container.innerHTML = '<p class="small" style="padding:20px;text-align:center;">Nenhuma ocorrência ou registro de ação com protocolo encontrado.</p>';
+                 return;
+            }
+
+            empenhosComDados.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'occurrence-item';
+                
+                const protocolHtml = item.protocol 
+                    ? `<span class="occurrence-protocol">Protocolo: ${item.protocol}</span>`
+                    : '<span class="occurrence-protocol" style="background:rgba(255,255,255,0.05);color:var(--muted)">Sem Protocolo</span>';
+
+                itemDiv.innerHTML = `
+                    <div class="occurrence-header">
+                        <div>
+                            <div class="occurrence-vtr">🚔 ${item.vtrId} (${item.unit})</div>
+                            <div class="small" style="color:var(--muted);margin-top:2px;">${new Date(item.time).toLocaleString('pt-BR')}</div>
+                        </div>
+                        ${protocolHtml}
+                    </div>
+                    <div class="occurrence-j">${item.j}: ${getJText(item.j).split(': ')[1]}</div>
+                    <div class="occurrence-actions">
+                        <strong>Ações Empregadas:</strong> 
+                        ${item.actions || '<em style="color:var(--muted)">Nenhuma ação detalhada registrada.</em>'}
+                    </div>
+                `;
+                container.appendChild(itemDiv);
+            });
+        }
+        // ====== FIM DA NOVA FUNÇÃO ======
+
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -1128,14 +1233,17 @@
             document.getElementById(`tab-${tabId}`).classList.add('active');
             document.querySelector(`.tab[onclick="switchTab('${tabId}')"`).classList.add('active');
             
+            // Recarrega o conteúdo relevante ao mudar de aba
             if (tabId === 'charts') {
                 drawCharts();
             } else if (tabId === 'performance') {
                 generatePerformanceStats();
+            } else if (tabId === 'occurrences') { // Novo
+                generateOcurrenceList();
             }
         }
         
-        // ====== Funções de Exportação (CSV e PDF) ======
+        // ====== Funções de Exportação (CSV e PDF) - Mantidas na íntegra ======
 
         function getFullEmpenhoData() {
             let data = [];
