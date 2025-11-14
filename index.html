@@ -55,31 +55,25 @@
         .unit-title{font-weight:600;font-size:16px;color:var(--accent)}
         
         .vtr-list{margin-top:12px}
-        .vtr-item{background:var(--glass);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:12px;margin-bottom:10px;transition:all 0.3s}
+        /* ESTILO COMPACTO PARA VTR */
+        .vtr-item{
+            background:var(--glass);border:1px solid rgba(255,255,255,0.06);border-radius:8px;
+            padding:10px;margin-bottom:8px;transition:all 0.3s;
+            display:flex;align-items:center;justify-content:space-between;gap:8px;
+            flex-wrap:wrap;
+        }
         .vtr-item.alert{border-color:var(--danger);box-shadow:0 0 10px rgba(239,68,68,0.3)}
         .vtr-item.hidden{display:none}
-        .vtr-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px}
-        .vtr-id{font-weight:600;color:#e6eef6;font-size:15px}
+
+        .vtr-info{display:flex;align-items:center;gap:10px;flex:1 1 200px;}
+        .vtr-id{font-weight:600;color:#e6eef6;font-size:14px}
         .vtr-badges{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
         .vtr-service{display:inline-block;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(16,185,129,0.2);color:var(--success)}
         .j-counter{display:inline-flex;gap:4px;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(245,158,11,0.2);color:var(--warning)}
+        .vtr-duration{font-weight:600;font-size:12px;min-width:60px;text-align:right;color:var(--warning)}
         
-        .crew-list{margin-top:8px;padding:8px;background:rgba(255,255,255,0.02);border-radius:6px}
-        .crew-member{font-size:12px;padding:4px 0;color:var(--muted)}
-        .crew-member strong{color:#e6eef6}
-        
-        .empenhos-timeline{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06)}
-        .empenho-entry{display:flex;align-items:flex-start;gap:10px;padding:8px;margin-bottom:6px;background:rgba(255,255,255,0.02);border-radius:6px}
-        .empenho-time{color:var(--accent);font-weight:600;min-width:70px;font-size:12px}
-        .empenho-info{flex:1}
-        .empenho-label{color:#e6eef6;font-weight:600;font-size:13px}
-        .empenho-details{font-size:11px;color:var(--muted);margin-top:4px}
-        .empenho-duration{color:var(--warning);font-weight:600;font-size:12px;min-width:80px;text-align:right}
-        .empenho-current{color:var(--success);animation:pulse 2s infinite}
-        
-        .protocol-badge{background:rgba(139,92,246,0.2);color:#a78bfa;padding:3px 6px;border-radius:3px;font-size:10px;font-weight:600;display:inline-block;margin-top:2px}
-        
-        .vtr-actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+        .vtr-actions{display:flex;gap:6px;flex-wrap:wrap}
+        /* FIM ESTILO COMPACTO */
         
         .chip{background:rgba(255,255,255,0.03);padding:6px 10px;border-radius:999px;font-size:12px;display:inline-block}
         .small{font-size:12px;color:var(--muted)}
@@ -97,12 +91,6 @@
         .crew-input-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
         .crew-input-header h4{margin:0;font-size:13px;color:var(--accent)}
         
-        .session-list{max-height:400px;overflow-y:auto}
-        .session-item{background:var(--glass);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:12px;margin-bottom:10px;cursor:pointer;transition:all 0.2s}
-        .session-item:hover{background:rgba(6,182,212,0.1);border-color:var(--accent)}
-        .session-title{font-weight:600;color:#e6eef6;margin-bottom:4px}
-        .session-meta{font-size:11px;color:var(--muted)}
-        
         .chart-container{background:var(--glass);border-radius:8px;padding:16px;margin-bottom:16px}
         canvas{max-height:300px}
         
@@ -112,7 +100,6 @@
         .tab-content{display:none}
         .tab-content.active{display:block}
         
-        /* Estilo para a lista de ocorrências */
         .occurrence-item {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 8px;
@@ -147,10 +134,38 @@
         .occurrence-actions {
             font-size: 13px;
             color: #e6eef6;
-            white-space: pre-wrap; /* Preserva quebras de linha */
+            white-space: pre-wrap; 
             margin-top: 8px;
             padding-top: 8px;
             border-top: 1px dashed rgba(255, 255, 255, 0.1);
+        }
+
+        /* Estilos específicos para o novo modal de busca */
+        #quickSearchVtr {
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        #quickSearchResult {
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 10px;
+            min-height: 50px;
+            color: var(--muted);
+            text-align: center;
+        }
+        .found-vtr {
+            background: rgba(6, 182, 212, 0.1);
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: 600;
+            color: var(--accent);
+            text-align: left;
+            margin-bottom: 10px;
+        }
+        .vtr-warning {
+            color: var(--danger);
+            font-weight: 600;
+            margin-top: 10px;
         }
         
         @media (max-width:700px){.row{flex-direction:column}.dashboard-grid{grid-template-columns:1fr}}
@@ -161,7 +176,7 @@
         <header>
             <h1>🚔 Mapa da Força — Controle de Unidades</h1>
             <div style="display:flex;gap:8px">
-                <button id="openSessionsBtn" class="ghost small">📝 Sessões</button>
+                <button id="openQuickEmpenhoBtn" class="success small">⚡ Empenho Rápido</button>
                 <button id="openStatsBtn" class="ghost small">📊 Estatísticas</button>
             </div>
         </header>
@@ -211,7 +226,7 @@
             <div class="card">
                 <div class="search-filter-bar">
                     <div class="search-box">
-                        <input type="text" id="searchVtr" placeholder="🔍 Buscar viatura..." />
+                        <input type="text" id="searchVtr" placeholder="🔍 Buscar viatura por ID ou tripulante..." />
                     </div>
                     <select id="filterService">
                         <option value="">Todos os Serviços</option>
@@ -268,17 +283,6 @@
             </div>
         </div>
 
-        <div class="modal" id="detailsModal">
-            <div class="modal-content" style="max-width:800px">
-                <div class="modal-header">
-                    <div class="modal-title" id="detailsModalTitle">Detalhes das Viaturas</div>
-                    <button class="modal-close" onclick="closeDetailsModal()">×</button>
-                </div>
-                <div id="detailsModalContent" style="max-height:60vh; overflow-y:auto;">
-                    </div>
-            </div>
-        </div>
-        
         <div class="modal" id="empenhoModal">
             <div class="modal-content">
                 <div class="modal-header">
@@ -312,17 +316,55 @@
             </div>
         </div>
 
-        <div class="modal" id="sessionsModal">
+        <div class="modal" id="quickEmpenhoModal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <div class="modal-title">📝 Histórico de Sessões</div>
-                    <button class="modal-close" onclick="closeSessionsModal()">×</button>
+                    <div class="modal-title">⚡ Empenho Rápido por Viatura</div>
+                    <button class="modal-close" onclick="closeQuickEmpenhoModal()">×</button>
                 </div>
-                <div class="session-list" id="sessionsList">
-                    <p class="small" style="text-align:center;padding:20px;">
-                        A funcionalidade de histórico de sessões para carregar dados antigos ainda está em desenvolvimento.
-                    </p>
+                
+                <div>
+                    <label>Buscar Identificação da Viatura (Ex: VTR-001)</label>
+                    <input id="quickSearchVtr" type="text" placeholder="Digite a ID da VTR" />
                 </div>
+
+                <div id="quickSearchResult" style="margin-bottom:15px;">
+                    Nenhuma viatura selecionada.
+                </div>
+
+                <div id="quickEmpenhoForm" style="display:none;">
+                    <div style="margin-bottom:12px;">
+                        <label>Empenho J *</label>
+                        <select id="quickModalEmpenhoJ"></select>
+                    </div>
+
+                    <div style="margin-top:12px">
+                        <label>Número de Protocolo</label>
+                        <input id="quickModalProtocol" type="text" placeholder="Ex: 2024-12345" />
+                    </div>
+
+                    <div style="margin-top:12px">
+                        <label>Ações Empregadas</label>
+                        <textarea id="quickModalActions" placeholder="Descreva as ações realizadas..."></textarea>
+                    </div>
+
+                    <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:8px">
+                        <button class="ghost" onclick="closeQuickEmpenhoModal()">Cancelar</button>
+                        <button id="saveQuickEmpenhoBtn" class="success">Registrar Empenho</button>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+
+        <div class="modal" id="detailsModal">
+            <div class="modal-content" style="max-width:800px">
+                <div class="modal-header">
+                    <div class="modal-title" id="detailsModalTitle">Detalhes das Viaturas</div>
+                    <button class="modal-close" onclick="closeDetailsModal()">×</button>
+                </div>
+                <div id="detailsModalContent" style="max-height:60vh; overflow-y:auto;">
+                    </div>
             </div>
         </div>
 
@@ -356,8 +398,7 @@
                 
                 <div class="tab-content" id="tab-occurrences">
                     <h3 style="margin-bottom:16px;">Registros de Ocorrências com Ações e Protocolos</h3>
-                    <div id="occurrenceList">
-                        </div>
+                    <div id="occurrenceList"></div>
                 </div>
             </div>
         </div>
@@ -396,7 +437,8 @@
         let session = {operator:'',datetime:'',selectedUnits:[],id:null};
         let unitsData = {};
         let editingVtr = null;
-        let currentVtrForEmpenho = null;
+        let currentVtrForEmpenho = null; // Usado pelo modal de empenho padrão
+        let quickEmpenhoVtr = null; // Usado pelo modal de empenho rápido
         let timerInterval = null;
         let alertsShown = new Set();
         let empenhosChart = null; 
@@ -413,11 +455,13 @@
             });
 
             const modalEmpenhoJ = document.getElementById('modalEmpenhoJ');
+            const quickModalEmpenhoJ = document.getElementById('quickModalEmpenhoJ');
             empenhosJ.forEach(e=>{
                 const opt = document.createElement('option');
                 opt.value = e.value;
                 opt.textContent = e.text;
-                modalEmpenhoJ.appendChild(opt);
+                modalEmpenhoJ.appendChild(opt.cloneNode(true));
+                quickModalEmpenhoJ.appendChild(opt);
             });
 
             const now = new Date();
@@ -425,6 +469,9 @@
             document.getElementById('dateTime').value = now.toISOString().slice(0,16);
             
             loadFromLocal();
+
+            // Adiciona listener para a busca rápida
+            document.getElementById('quickSearchVtr').addEventListener('input', findVtrForQuickEmpenho);
         })();
 
         // ====== Funções de Utilidade ======
@@ -445,6 +492,18 @@
             return `${hours > 0 ? hours + 'h ' : ''}${minutes}m`;
         }
         
+        // Retorna a VTR e seus índices
+        function findVtrById(id) {
+            for (const unitKey in unitsData) {
+                const vtrs = unitsData[unitKey].vtrs;
+                const vtrIndex = vtrs.findIndex(v => v.id.toLowerCase() === id.toLowerCase());
+                if (vtrIndex !== -1) {
+                    return { unitKey, vtrIndex, vtr: vtrs[vtrIndex] };
+                }
+            }
+            return null;
+        }
+
         // ====== Persistência (Salvar/Carregar) ======
         function saveToLocal() {
             if (session.id) {
@@ -574,7 +633,7 @@
             alert('Turno finalizado com sucesso! Pronto para iniciar um novo Mapa da Força.');
         }
 
-        // ====== Dashboard ======
+        // ====== Dashboard, Alertas e Timers (Mantidos) ======
         function updateDashboard(){
             let totalVtrs = 0;
             let totalEmpenhos = 0;
@@ -618,7 +677,6 @@
             `;
         }
         
-        // ====== Funções do Modal de Detalhes da VTR ======
         function openDetailsModal(type) {
             const modal = document.getElementById('detailsModal');
             const title = document.getElementById('detailsModalTitle');
@@ -694,7 +752,6 @@
             document.getElementById('detailsModal').classList.remove('active');
         }
 
-        // ====== Alertas e Timers (Mantidos na íntegra) ======
         function startTimers(){
             if(timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(() => {
@@ -738,7 +795,7 @@
             Notification.requestPermission();
         }
 
-        // ====== Gerenciamento de VTRs (Mantidos na íntegra) ======
+        // ====== Gerenciamento de VTRs (Mantidos) ======
         function openVtrModal(unitKey, vtrIndex = null){
             const modal = document.getElementById('vtrModal');
             const container = document.getElementById('crewInputsContainer');
@@ -868,23 +925,100 @@
             const j = document.getElementById('modalEmpenhoJ').value;
             const protocol = document.getElementById('modalProtocol').value.trim();
             const actions = document.getElementById('modalActions').value.trim();
-            const now = new Date().toISOString();
+            
+            performEmpenho(vtr, j, protocol, actions);
 
-            const newEmpenho = {
-                j,
-                time: now,
-                protocol: protocol || null,
-                actions: actions || null
-            };
-
-            vtr.empenhos.push(newEmpenho);
             closeEmpenhoModal();
             renderUnits();
             updateDashboard();
             saveToLocal();
         }
 
-        // ====== Renderização e Filtro (Mantidos na íntegra) ======
+        // ====== NOVO: Empenho Rápido ======
+        document.getElementById('openQuickEmpenhoBtn').addEventListener('click', openQuickEmpenhoModal);
+
+        function openQuickEmpenhoModal() {
+            // Limpa o modal e exibe
+            document.getElementById('quickSearchVtr').value = '';
+            document.getElementById('quickSearchResult').innerHTML = 'Nenhuma viatura selecionada.';
+            document.getElementById('quickEmpenhoForm').style.display = 'none';
+            quickEmpenhoVtr = null;
+            document.getElementById('quickEmpenhoModal').classList.add('active');
+        }
+
+        function closeQuickEmpenhoModal() {
+            document.getElementById('quickEmpenhoModal').classList.remove('active');
+        }
+
+        function findVtrForQuickEmpenho() {
+            const searchId = document.getElementById('quickSearchVtr').value.trim();
+            const resultDiv = document.getElementById('quickSearchResult');
+            const formDiv = document.getElementById('quickEmpenhoForm');
+            quickEmpenhoVtr = null;
+            formDiv.style.display = 'none';
+
+            if (searchId.length < 2) {
+                resultDiv.innerHTML = 'Digite pelo menos 2 caracteres para buscar.';
+                return;
+            }
+
+            const found = findVtrById(searchId);
+
+            if (found) {
+                quickEmpenhoVtr = found;
+                resultDiv.innerHTML = `
+                    <div class="found-vtr">
+                        Viatura Encontrada: <strong>${found.vtr.id}</strong> (${units[found.unitKey]})
+                    </div>
+                `;
+                // Pré-preenche o J mais comum ou o J1
+                const lastEmpenho = found.vtr.empenhos[found.vtr.empenhos.length - 1];
+                document.getElementById('quickModalEmpenhoJ').value = (lastEmpenho && lastEmpenho.j !== 'J11') ? lastEmpenho.j : 'J1'; 
+                document.getElementById('quickModalProtocol').value = '';
+                document.getElementById('quickModalActions').value = '';
+                formDiv.style.display = 'block';
+
+            } else {
+                resultDiv.innerHTML = `
+                    <p>Viatura **${searchId}** não encontrada ou não montada.</p>
+                    <p class="vtr-warning">Certifique-se que a ID esteja correta e que a VTR tenha sido cadastrada na unidade correta.</p>
+                `;
+            }
+        }
+
+        document.getElementById('saveQuickEmpenhoBtn').addEventListener('click', saveQuickEmpenho);
+
+        function saveQuickEmpenho() {
+            if (!quickEmpenhoVtr) {
+                alert('Nenhuma viatura selecionada.');
+                return;
+            }
+
+            const vtr = quickEmpenhoVtr.vtr;
+            const j = document.getElementById('quickModalEmpenhoJ').value;
+            const protocol = document.getElementById('quickModalProtocol').value.trim();
+            const actions = document.getElementById('quickModalActions').value.trim();
+
+            performEmpenho(vtr, j, protocol, actions);
+
+            closeQuickEmpenhoModal();
+            renderUnits();
+            updateDashboard();
+            saveToLocal();
+        }
+
+        function performEmpenho(vtr, j, protocol, actions) {
+            const now = new Date().toISOString();
+            const newEmpenho = {
+                j,
+                time: now,
+                protocol: protocol || null,
+                actions: actions || null
+            };
+            vtr.empenhos.push(newEmpenho);
+        }
+
+        // ====== Renderização e Filtro - MAIS COMPACTO ======
         function renderUnits(){
             const container = document.getElementById('unitsContainer');
             container.innerHTML = '';
@@ -927,58 +1061,28 @@
                     const currentEmpenhoHtml = lastEmpenho ? `
                         <div class="vtr-badges">
                             <span class="vtr-service">${vtr.service}</span>
-                            <span class="j-counter">${lastEmpenho.j} - ${getJText(lastEmpenho.j).split(': ')[1] || ''}</span>
+                            <span class="j-counter">${lastEmpenho.j}</span>
                             ${isAlert ? '<span class="alert-badge">ALERTA</span>' : ''}
                         </div>
-                        <div class="empenho-duration empenho-current" data-time="${lastEmpenho.time}">
+                        <div class="vtr-duration" data-time="${lastEmpenho.time}">
                             ${timeDifference(lastEmpenho.time)}
                         </div>
                     ` : `
                         <div class="vtr-badges">
                             <span class="vtr-service">${vtr.service}</span>
-                            <span class="j-counter" style="background:rgba(255,255,255,0.1);color:var(--muted)">Em Base/Sem J</span>
+                            <span class="j-counter" style="background:rgba(255,255,255,0.1);color:var(--muted)">Em Base</span>
                         </div>
                     `;
 
-                    const crewNames = vtr.crew.map(m => `
-                        <div class="crew-member"><strong>${m.rank}</strong> ${m.name}</div>
-                    `).join('');
-
-                    const timelineHtml = vtr.empenhos.slice(-3).reverse().map(emp => `
-                        <div class="empenho-entry">
-                            <div class="empenho-time">${formatTime(emp.time)}</div>
-                            <div class="empenho-info">
-                                <div class="empenho-label">
-                                    ${emp.j}: ${getJText(emp.j).split(': ')[1]}
-                                </div>
-                                ${emp.protocol ? `<span class="protocol-badge">${emp.protocol}</span>` : ''}
-                                ${emp.actions ? `<div class="empenho-details">${emp.actions}</div>` : ''}
-                            </div>
-                        </div>
-                    `).join('');
-
-
+                    // NOVO HTML COMPACTO
                     vtrItem.innerHTML = `
-                        <div class="vtr-header">
-                            <div class="vtr-id">
-                                🚔 ${vtr.id}
-                            </div>
+                        <div class="vtr-info">
+                            <div class="vtr-id">🚔 ${vtr.id}</div>
                             ${currentEmpenhoHtml}
                         </div>
-
-                        <div class="crew-list">
-                            ${crewNames || '<div class="small">Sem equipe cadastrada</div>'}
-                            ${vtr.phone ? `<div class="small" style="margin-top:4px;">📞 ${vtr.phone}</div>` : ''}
-                        </div>
-
-                        <div class="empenhos-timeline">
-                            <h3 style="margin:0;font-size:12px;color:var(--muted)">Últimos Empenhos:</h3>
-                            ${timelineHtml || '<div class="small" style="padding:8px 0;">Nenhum empenho registrado.</div>'}
-                        </div>
-
                         <div class="vtr-actions">
                             <button class="small success" onclick="openEmpenhoModal('${uk}', ${vtrIndex})">J +</button>
-                            <button class="small ghost" onclick="openVtrModal('${uk}', ${vtrIndex})">Editar</button>
+                            <button class="small ghost" onclick="openVtrModal('${uk}', ${vtrIndex})">Detalhes/Editar</button>
                             <button class="small danger" onclick="deleteVtr('${uk}', ${vtrIndex})">Excluir</button>
                         </div>
                     `;
@@ -995,23 +1099,16 @@
         document.getElementById('filterService').addEventListener('change', renderUnits);
         document.getElementById('filterUnit').addEventListener('change', renderUnits);
 
-        // Funções placeholders para modais futuros (sessões)
-        function openSessionsModal() { document.getElementById('sessionsModal').classList.add('active'); }
-        function closeSessionsModal() { document.getElementById('sessionsModal').classList.remove('active'); }
-        
-        document.getElementById('openSessionsBtn').addEventListener('click', openSessionsModal);
-
-        // ====== Funções de Estatísticas e Análise - ATUALIZADAS ======
+        // ====== Funções de Estatísticas e Análise (Mantidas) ======
         document.getElementById('openStatsBtn').addEventListener('click', openStatsModal);
 
         function openStatsModal() {
             document.getElementById('statsModal').classList.add('active');
-            // Garante que a primeira aba esteja ativa ao abrir, mas gera todos os dados
             switchTab('charts');
             generateStatistics();
             drawCharts();
             generatePerformanceStats();
-            generateOcurrenceList(); // Chama a nova função
+            generateOcurrenceList();
         }
 
         function closeStatsModal() {
@@ -1165,7 +1262,6 @@
             container.innerHTML = performanceHtml;
         }
         
-        // ====== NOVA FUNÇÃO: Geração da Lista de Ocorrências ======
         function generateOcurrenceList() {
             const container = document.getElementById('occurrenceList');
             container.innerHTML = '';
@@ -1176,7 +1272,6 @@
                 const unitName = units[uk];
                 unitsData[uk]?.vtrs.forEach(vtr => {
                     vtr.empenhos.forEach(empenho => {
-                        // Filtra apenas empenhos que possuem Protocolo ou Ações (que representam uma "Ocorrência")
                         if (empenho.protocol || empenho.actions) {
                             empenhosComDados.push({
                                 unit: unitName,
@@ -1191,7 +1286,6 @@
                 });
             });
 
-            // Ordena os empenhos pelo tempo (mais recente primeiro)
             empenhosComDados.sort((a, b) => new Date(b.time) - new Date(a.time));
 
             if (empenhosComDados.length === 0) {
@@ -1224,8 +1318,6 @@
                 container.appendChild(itemDiv);
             });
         }
-        // ====== FIM DA NOVA FUNÇÃO ======
-
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -1233,17 +1325,16 @@
             document.getElementById(`tab-${tabId}`).classList.add('active');
             document.querySelector(`.tab[onclick="switchTab('${tabId}')"`).classList.add('active');
             
-            // Recarrega o conteúdo relevante ao mudar de aba
             if (tabId === 'charts') {
                 drawCharts();
             } else if (tabId === 'performance') {
                 generatePerformanceStats();
-            } else if (tabId === 'occurrences') { // Novo
+            } else if (tabId === 'occurrences') { 
                 generateOcurrenceList();
             }
         }
         
-        // ====== Funções de Exportação (CSV e PDF) - Mantidas na íntegra ======
+        // ====== Funções de Exportação (CSV e PDF) (Mantidas) ======
 
         function getFullEmpenhoData() {
             let data = [];
