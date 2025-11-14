@@ -176,6 +176,43 @@
             border-radius: 8px;
             padding: 10px;
         }
+
+        /* Estilo para a tabela de desempenho */
+        .performance-table th, .performance-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .performance-table th {
+            background: rgba(255,255,255,0.05);
+        }
+        .performance-table tr:hover {
+            background: rgba(255,255,255,0.02);
+        }
+        
+        /* Estilos para o modal de detalhes da VTR */
+        .empenho-history-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 3px solid var(--accent);
+        }
+        .empenho-history-item strong {
+            color: var(--warning);
+        }
+        .empenho-history-item .small {
+            color: var(--muted);
+        }
+        .empenho-history-item pre {
+            white-space: pre-wrap;
+            background: rgba(0,0,0,0.2);
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 8px;
+            font-size: 12px;
+            overflow-x: auto;
+        }
         
         @media (max-width:700px){.row{flex-direction:column}.dashboard-grid{grid-template-columns:1fr}}
     </style>
@@ -396,7 +433,7 @@
                     </div>
             </div>
         </div>
-
+        
         <div class="modal" id="statsModal">
             <div class="modal-content" style="max-width:900px">
                 <div class="modal-header">
@@ -426,9 +463,23 @@
                 </div>
                 
                 <div class="tab-content" id="tab-occurrences">
+                    <div class="search-box" style="margin-bottom:15px;">
+                        <input type="text" id="searchProtocol" placeholder="🔍 Buscar por número de Protocolo..." oninput="generateOcurrenceList()" />
+                    </div>
                     <h3 style="margin-bottom:16px;">Registros de Ocorrências com Ações e Protocolos</h3>
                     <div id="occurrenceList"></div>
                 </div>
+            </div>
+        </div>
+
+        <div class="modal" id="vtrDetailsModal">
+            <div class="modal-content" style="max-width:800px">
+                <div class="modal-header">
+                    <div class="modal-title" id="vtrDetailsModalTitle">Detalhes da Viatura</div>
+                    <button class="modal-close" onclick="closeVtrDetailsModal()">×</button>
+                </div>
+                <div id="vtrDetailsModalContent">
+                    </div>
             </div>
         </div>
 
@@ -630,7 +681,7 @@
             saveToLocal();
         });
         
-        // ====== Funcionalidade de Adicionar Unidades (NOVO) ======
+        // ====== Funcionalidade de Adicionar Unidades (Mantido) ======
         function openAddUnitModal() {
             const modal = document.getElementById('addUnitModal');
             const container = document.getElementById('unitsToAddContainer');
@@ -809,7 +860,7 @@
                 }
 
                 item.innerHTML = `
-                    <div class="vtr-header">
+                    <div class="vtr-info">
                         <div class="vtr-id">
                             ${vtr.id}
                             ${isAlert ? '<span class="alert-badge">ALERTA TEMPO!</span>' : ''}
@@ -874,7 +925,7 @@
             Notification.requestPermission();
         }
 
-        // ====== Gerenciamento de VTRs (Mantidos) ======
+        // ====== Gerenciamento de VTRs (Mantido) ======
         function openVtrModal(unitKey, vtrIndex = null){
             const modal = document.getElementById('vtrModal');
             const container = document.getElementById('crewInputsContainer');
@@ -1178,7 +1229,7 @@
         document.getElementById('filterService').addEventListener('change', renderUnits);
         document.getElementById('filterUnit').addEventListener('change', renderUnits);
 
-        // ====== Funções de Estatísticas e Análise (Mantidas) ======
+        // ====== Funções de Estatísticas e Análise (Ajustadas) ======
         document.getElementById('openStatsBtn').addEventListener('click', openStatsModal);
 
         function openStatsModal() {
@@ -1283,22 +1334,61 @@
                 }
             });
         }
-
+        
         function generatePerformanceStats() {
-            const stats = generateStatistics();
             const container = document.getElementById('performanceStats');
             container.innerHTML = '';
 
-            const duracoesJ = {}; 
-            stats.durations.forEach(d => {
-                if (!duracoesJ[d.j]) duracoesJ[d.j] = [];
-                duracoesJ[d.j].push(d.duration);
+            let allVtrs = [];
+            session.selectedUnits.forEach(uk => {
+                const unitName = units[uk];
+                unitsData[uk]?.vtrs.forEach(vtr => {
+                    if (vtr.empenhos.length > 0) {
+                        
+                        const vtrStats = {
+                            id: vtr.id,
+                            unit: unitName,
+                            unitKey: uk,
+                            vtrIndex: unitsData[uk].vtrs.findIndex(item => item.id === vtr.id),
+                            totalEmpenhos: vtr.empenhos.length,
+                            totalTempoMins: 0,
+                            empenhosFinalizados: 0,
+                            lastJ: vtr.empenhos[vtr.empenhos.length - 1].j
+                        };
+                        
+                        let durations = [];
+                        vtr.empenhos.forEach((empenho, index) => {
+                            if (index > 0) {
+                                const prevTime = new Date(vtr.empenhos[index - 1].time).getTime();
+                                const currentTime = new Date(empenho.time).getTime();
+                                const durationMins = Math.floor((currentTime - prevTime) / 60000);
+                                durations.push(durationMins);
+                                vtrStats.totalTempoMins += durationMins;
+                            }
+                        });
+
+                        vtrStats.empenhosFinalizados = durations.length;
+                        vtrStats.mediaTempoMins = vtrStats.empenhosFinalizados > 0 
+                            ? Math.round(vtrStats.totalTempoMins / vtrStats.empenhosFinalizados) 
+                            : 0;
+
+                        allVtrs.push(vtrStats);
+                    }
+                });
             });
 
-            let totalEmpenhosFinalizados = stats.durations.length;
-            let totalTempo = stats.durations.reduce((acc, curr) => acc + curr.duration, 0);
+            if (allVtrs.length === 0) {
+                container.innerHTML = '<p class="small" style="padding:20px;text-align:center;">Nenhuma viatura com empenhos registrados para gerar o relatório de desempenho.</p>';
+                return;
+            }
 
-            const performanceHtml = `
+            // Exibição do resumo geral
+            const totalEmpenhosFinalizados = allVtrs.reduce((sum, v) => sum + v.empenhosFinalizados, 0);
+            const totalTempo = allVtrs.reduce((sum, v) => sum + v.totalTempoMins, 0);
+            const mediaGeral = totalEmpenhosFinalizados > 0 ? Math.round(totalTempo / totalEmpenhosFinalizados) : 0;
+
+
+            let performanceHtml = `
                 <div class="card" style="margin-bottom:12px;display:flex;gap:16px;justify-content:space-around;">
                     <div style="text-align:center;">
                         <div class="stat-label">Total de Empenhos Finalizados</div>
@@ -1306,44 +1396,115 @@
                     </div>
                     <div style="text-align:center;">
                         <div class="stat-label">Tempo Médio Total (min)</div>
-                        <div class="stat-value" style="font-size:24px;color:var(--accent);">${totalEmpenhosFinalizados > 0 ? Math.round(totalTempo / totalEmpenhosFinalizados) : 0}m</div>
+                        <div class="stat-value" style="font-size:24px;color:var(--accent);">${mediaGeral}m</div>
                     </div>
                 </div>
 
-                <h3>Tempo Médio por Tipo de Empenho (J)</h3>
-                <table style="width:100%;border-collapse:collapse;text-align:left;">
+                <h3>Desempenho Individual das Viaturas Ativas</h3>
+                <table class="performance-table" style="width:100%;border-collapse:collapse;text-align:left;">
                     <thead>
-                        <tr style="background:rgba(255,255,255,0.05);">
-                            <th style="padding:10px;">Empenho J</th>
-                            <th style="padding:10px;">Descrição</th>
-                            <th style="padding:10px;">Qtd. de Registros</th>
-                            <th style="padding:10px;">Média (min)</th>
+                        <tr>
+                            <th>Viatura</th>
+                            <th>Unidade</th>
+                            <th>Total J's</th>
+                            <th>J Atual</th>
+                            <th>Média Tempo (min)</th>
+                            <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${Object.entries(duracoesJ).map(([j, durations]) => {
-                            const totalDuracao = durations.reduce((a, b) => a + b, 0);
-                            const media = Math.round(totalDuracao / durations.length);
-                            return `
-                                <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-                                    <td style="padding:10px;font-weight:600;">${j}</td>
-                                    <td style="padding:10px;font-size:13px;color:var(--muted);">${getJText(j).split(': ')[1]}</td>
-                                    <td style="padding:10px;">${durations.length}</td>
-                                    <td style="padding:10px;font-weight:600;color:var(--warning);">${media}m</td>
-                                </tr>
-                            `;
-                        }).join('')}
+                        ${allVtrs.map(vtr => `
+                            <tr style="cursor:pointer;" title="Clique para ver os detalhes" onclick="openVtrDetailsModal('${vtr.unitKey}', ${vtr.vtrIndex})">
+                                <td style="font-weight:600;">🚔 ${vtr.id}</td>
+                                <td style="font-size:13px;color:var(--muted);">${vtr.unit}</td>
+                                <td>${vtr.totalEmpenhos}</td>
+                                <td style="font-weight:600;color:var(--warning);">${vtr.lastJ}</td>
+                                <td style="color:${vtr.mediaTempoMins > 0 ? 'var(--accent)' : 'var(--muted)'};">${vtr.mediaTempoMins}m</td>
+                                <td><button class="small ghost" onclick="event.stopPropagation(); openVtrDetailsModal('${vtr.unitKey}', ${vtr.vtrIndex})">Ver Histórico</button></td>
+                            </tr>
+                        `).join('')}
                     </tbody>
                 </table>
-                ${totalEmpenhosFinalizados === 0 ? '<p class="small" style="padding:20px;text-align:center;">Não há empenhos finalizados (com dois registros) para calcular a performance.</p>' : ''}
             `;
 
             container.innerHTML = performanceHtml;
         }
-        
+
+        // NOVO: Modal de detalhes da VTR
+        function openVtrDetailsModal(unitKey, vtrIndex) {
+            const modal = document.getElementById('vtrDetailsModal');
+            const title = document.getElementById('vtrDetailsModalTitle');
+            const content = document.getElementById('vtrDetailsModalContent');
+            content.innerHTML = '';
+            
+            const vtr = unitsData[unitKey].vtrs[vtrIndex];
+            title.textContent = `Histórico Detalhado: 🚔 ${vtr.id} (${units[unitKey]})`;
+
+            const headerHtml = `
+                <div style="margin-bottom:15px; background:rgba(6,182,212,0.1); padding:15px; border-radius:8px;">
+                    <h4 style="margin:0; color:var(--accent);">Informações da Viatura</h4>
+                    <div class="small" style="margin-top:5px;">
+                        **Serviço:** ${vtr.service} | **Unidade:** ${units[unitKey]} | **Telefone:** ${vtr.phone || 'N/A'}
+                    </div>
+                    <div class="small" style="margin-top:5px;">
+                        **Tripulação:** ${vtr.crew.map(m => `${m.rank} ${m.name}`).filter(s => s.trim()).join(' / ') || 'Não informada'}
+                    </div>
+                </div>
+                
+                <h3 style="margin-top:20px;">Histórico de Empenhos (${vtr.empenhos.length} Registros)</h3>
+            `;
+            content.innerHTML += headerHtml;
+
+            if (vtr.empenhos.length === 0) {
+                content.innerHTML += '<p class="small" style="text-align:center;">Nenhum empenho registrado para esta viatura.</p>';
+            } else {
+                vtr.empenhos.slice().reverse().forEach((empenho, index) => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'empenho-history-item';
+                    
+                    const time = new Date(empenho.time).toLocaleString('pt-BR');
+                    const isLast = index === 0;
+                    
+                    let durationHtml = '';
+                    if (empenho.j !== 'J11' && index < vtr.empenhos.length - 1) {
+                         // Calcula a duração do J anterior até este J atual (se não for o último)
+                         const nextEmpenho = vtr.empenhos[vtr.empenhos.length - 2 - index];
+                         const duration = timeDifference(empenho.time, nextEmpenho.time);
+                         durationHtml = `<span style="margin-left:15px; font-weight:600; color:var(--success);">Duração até o próximo J: ${duration}</span>`;
+                    } else if (isLast) {
+                        // Calcula a duração do J atual até agora
+                        const duration = timeDifference(empenho.time);
+                         durationHtml = `<span style="margin-left:15px; font-weight:600; color:var(--warning);">Duração Atual: ${duration}</span>`;
+                    }
+                    
+                    itemDiv.innerHTML = `
+                        <div>
+                            <strong>${empenho.j}: ${getJText(empenho.j).split(': ')[1]}</strong>
+                            ${durationHtml}
+                        </div>
+                        <div class="small">
+                            Início: ${time} ${empenho.protocol ? `| Protocolo: **${empenho.protocol}**` : ''}
+                        </div>
+                        ${empenho.actions ? `
+                            <div class="small" style="margin-top:5px;">**Ações Empregadas:**</div>
+                            <pre>${empenho.actions}</pre>
+                        ` : ''}
+                    `;
+                    content.appendChild(itemDiv);
+                });
+            }
+
+            modal.classList.add('active');
+        }
+
+        function closeVtrDetailsModal() {
+            document.getElementById('vtrDetailsModal').classList.remove('active');
+        }
+
         function generateOcurrenceList() {
             const container = document.getElementById('occurrenceList');
             container.innerHTML = '';
+            const searchProtocol = document.getElementById('searchProtocol').value.toLowerCase().trim();
             
             const empenhosComDados = [];
 
@@ -1366,13 +1527,19 @@
             });
 
             empenhosComDados.sort((a, b) => new Date(b.time) - new Date(a.time));
+            
+            const filteredEmpenhos = empenhosComDados.filter(item => {
+                if (!searchProtocol) return true;
+                return item.protocol && item.protocol.toLowerCase().includes(searchProtocol);
+            });
 
-            if (empenhosComDados.length === 0) {
-                 container.innerHTML = '<p class="small" style="padding:20px;text-align:center;">Nenhuma ocorrência ou registro de ação com protocolo encontrado.</p>';
+
+            if (filteredEmpenhos.length === 0) {
+                 container.innerHTML = `<p class="small" style="padding:20px;text-align:center;">Nenhuma ocorrência ou registro de ação encontrado para o filtro de protocolo "${searchProtocol}".</p>`;
                  return;
             }
 
-            empenhosComDados.forEach(item => {
+            filteredEmpenhos.forEach(item => {
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'occurrence-item';
                 
