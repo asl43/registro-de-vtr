@@ -8,104 +8,377 @@
     <script src="https://unpkg.com/jspdf-autotable@3.5.20/dist/jspdf.plugin.autotable.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
     <style>
-        :root{--bg:#0f1724;--card:#0b1220;--accent:#06b6d4;--muted:#94a3b8;--glass:rgba(255,255,255,0.04);--success:#10b981;--warning:#f59e0b;--danger:#ef4444}
+        /* ======================================= */
+        /* VARIÁVEIS DE TEMA (DARK MODE PADRÃO)    */
+        /* ======================================= */
+        :root {
+            /* Cores Escuras (Padrão) */
+            --bg: #0f172a;
+            --card: #0b1220;
+            --text-primary: #e6eef6;
+            --text-muted: #94a3b8;
+            --glass: rgba(255, 255, 255, 0.04);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --gradient: linear-gradient(180deg, #06202a 0%, #071425 100%);
+
+            /* Cores de Destaque */
+            --accent: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            
+            /* Sombra */
+            --shadow: 0 6px 20px rgba(2, 6, 23, 0.6);
+        }
+
+        /* Cores para o Modo Claro */
+        .light-mode {
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text-primary: #1f2937;
+            --text-muted: #6b7280;
+            --glass: rgba(0, 0, 0, 0.04);
+            --border-color: rgba(0, 0, 0, 0.1);
+            --gradient: linear-gradient(180deg, #f0f4f7 0%, #ffffff 100%);
+
+            /* Ajuste de tons para o modo claro */
+            --accent: #0284c7; /* Azul mais forte */
+            --success: #059669;
+            --warning: #d97706;
+            --danger: #dc2626;
+
+            /* Sombra */
+            --shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* ======================================= */
+        /* ESTILOS GERAIS                         */
+        /* ======================================= */
         *{box-sizing:border-box;font-family:Inter,Segoe UI,Roboto,system-ui,-apple-system,Helvetica,Arial}
-        body{margin:0;background:linear-gradient(180deg,#06202a 0%,#071425 100%);color:#e6eef6;min-height:100vh;padding:24px}
+        body{
+            margin:0;
+            background:var(--gradient);
+            color:var(--text-primary);
+            min-height:100vh;
+            padding:24px;
+            transition:background 0.3s, color 0.3s;
+        }
         .app{width:100%;max-width:1400px;margin:0 auto}
         header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px}
         h1{font-size:20px;margin:0}
         h2{font-size:18px;margin:12px 0 8px}
         h3{font-size:15px;margin:8px 0;color:var(--accent)}
-        .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 20px rgba(2,6,23,0.6);margin-bottom:14px}
+        .card{
+            background:var(--card);
+            border-radius:12px;
+            padding:18px;
+            box-shadow:var(--shadow);
+            margin-bottom:14px;
+            transition:background 0.3s, box-shadow 0.3s;
+        }
         
-        label{font-size:13px;color:var(--muted);display:block;margin-bottom:4px}
-        input[type=text],input[type=datetime-local],select,input[type=tel],textarea{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:var(--glass);color:inherit;font-size:14px}
+        label{font-size:13px;color:var(--text-muted);display:block;margin-bottom:4px}
+        input[type=text],input[type=datetime-local],select,input[type=tel],textarea{
+            width:100%;
+            padding:10px;
+            border-radius:8px;
+            border:1px solid var(--border-color);
+            background:var(--glass);
+            color:var(--text-primary);
+            font-size:14px;
+            transition:background 0.3s, color 0.3s, border-color 0.3s;
+        }
         textarea{resize:vertical;min-height:80px}
         
         .row{display:flex;gap:12px;margin-bottom:12px}
         .col{flex:1}
         .col-auto{flex:0 0 auto}
         
-        button{background:var(--accent);border:none;padding:10px 14px;border-radius:8px;color:#022;cursor:pointer;font-weight:600;font-size:13px;transition:opacity 0.2s}
+        button{
+            background:var(--accent);
+            border:none;
+            padding:10px 14px;
+            border-radius:8px;
+            color:var(--card); /* Mantém o texto escuro no botão primário */
+            cursor:pointer;
+            font-weight:600;
+            font-size:13px;
+            transition:opacity 0.2s, background 0.3s, color 0.3s;
+        }
         button:hover{opacity:0.9}
-        button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.1);color:var(--muted)}
+        button.ghost{
+            background:transparent;
+            border:1px solid var(--border-color);
+            color:var(--text-muted);
+        }
         button.danger{background:var(--danger);color:white}
         button.success{background:var(--success);color:white}
         button.small{padding:6px 10px;font-size:12px}
         
-        .multi-select{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;max-height:300px;overflow-y:auto;padding:12px;background:var(--glass);border-radius:8px}
-        .unit-checkbox{display:flex;align-items:center;gap:8px;padding:8px;border-radius:6px;cursor:pointer;transition:background 0.2s}
-        .unit-checkbox:hover{background:rgba(255,255,255,0.02)}
-        .unit-checkbox input{cursor:pointer}
-        .unit-checkbox label{cursor:pointer;margin:0;color:#e6eef6}
-        
-        .dashboard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
-        .stat-card{background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.3);border-radius:10px;padding:16px;text-align:center}
-        .stat-value{font-size:32px;font-weight:700;color:var(--accent);margin:8px 0}
-        .stat-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px}
-        
-        .alert-badge{background:var(--danger);color:white;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:600;margin-left:8px;animation:pulse 2s infinite}
-        
-        .search-filter-bar{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
-        .search-box{flex:1;min-width:200px}
-        
-        .units-grid{display:grid;gap:14px}
-        .unit-card{background:rgba(6,182,212,0.05);border:1px solid rgba(6,182,212,0.2);border-radius:10px;padding:14px}
-        .unit-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-        .unit-title{font-weight:600;font-size:16px;color:var(--accent)}
-        
-        .vtr-list{margin-top:12px}
-        /* ESTILO COMPACTO PARA VTR */
-        .vtr-item{
-            background:var(--glass);border:1px solid rgba(255,255,255,0.06);border-radius:8px;
-            padding:10px;margin-bottom:8px;transition:all 0.3s;
-            display:flex;align-items:center;justify-content:space-between;gap:8px;
-            flex-wrap:wrap;
+        .multi-select{
+            background:var(--glass);
+            border-radius:8px;
+            border:1px solid var(--border-color);
+            padding:12px;
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+            gap:8px;
+            transition: background 0.3s, border-color 0.3s;
         }
-        .vtr-item.alert{border-color:var(--danger);box-shadow:0 0 10px rgba(239,68,68,0.3)}
-        .vtr-item.hidden{display:none}
+        .unit-checkbox{color:var(--text-primary)}
+        .unit-checkbox label{color:var(--text-primary);font-size:14px;margin-bottom:0}
+        
+        /* Layout Grid da tela 2 */
+        .dashboard-grid{
+            display:grid;
+            grid-template-columns:repeat(4,1fr);
+            gap:16px;
+            margin-bottom:16px;
+        }
+        .units-grid{
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+            gap:16px;
+        }
+        
+        /* Estilos de Cartões */
+        .stat-card{
+            background:rgba(6,182,212,0.1);
+            border:1px solid rgba(6,182,212,0.3);
+            padding:16px;
+            border-radius:8px;
+            text-align:center;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .light-mode .stat-card {
+            background: rgba(2, 132, 199, 0.1);
+            border: 1px solid rgba(2, 132, 199, 0.3);
+        }
+        .stat-value{font-size:28px;font-weight:700;color:var(--accent)}
+        .stat-label{font-size:12px;color:var(--text-muted)}
+        
+        .unit-card{
+            background:var(--card);
+            border-radius:12px;
+            padding:15px;
+            box-shadow:var(--shadow);
+        }
+        .unit-header{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            margin-bottom:12px;
+            padding-bottom:10px;
+            border-bottom:1px solid var(--border-color);
+        }
+        .unit-title{font-weight:600;font-size:16px;color:var(--text-primary)}
+        .vtr-list{display:flex;flex-direction:column;gap:10px}
+        
+        .vtr-item{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            padding:10px;
+            border-radius:8px;
+            background:var(--glass);
+            border:1px solid var(--border-color);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .vtr-item.alert{border-color:var(--danger);animation:pulse-red 1.5s infinite}
+        .vtr-info{flex-grow:1}
+        .vtr-id{font-weight:600;font-size:15px;color:var(--text-primary)}
+        .vtr-actions{display:flex;gap:6px;margin-left:10px}
+        
+        .vtr-badges{display:flex;gap:4px;margin-top:4px;align-items:center}
+        .vtr-service{
+            background:rgba(16,185,129,0.2);
+            color:var(--success);
+            padding:2px 6px;
+            border-radius:4px;
+            font-size:10px;
+            font-weight:600;
+        }
+        .j-counter{
+            background:rgba(245,158,11,0.2);
+            color:var(--warning);
+            padding:2px 6px;
+            border-radius:4px;
+            font-size:10px;
+            font-weight:600;
+        }
+        .vtr-duration{
+            font-size:14px;
+            font-weight:600;
+            color:var(--warning);
+            margin-left:8px;
+        }
+        .alert-badge{
+            background:var(--danger);
+            color:white;
+            padding:2px 6px;
+            border-radius:4px;
+            font-size:10px;
+            font-weight:600;
+            margin-left:4px;
+        }
+        
+        /* Modais */
+        .modal{
+            display:none;
+            position:fixed;
+            z-index:1000;
+            left:0;
+            top:0;
+            width:100%;
+            height:100%;
+            overflow:auto;
+            background:rgba(0,0,0,0.85);
+            padding-top:60px;
+        }
+        .modal.active{display:block}
+        .modal-content{
+            background:var(--card);
+            margin:5% auto;
+            padding:20px;
+            border-radius:12px;
+            width:90%;
+            max-width:500px;
+            box-shadow:var(--shadow);
+            transition: background 0.3s;
+        }
+        .modal-content[style*="max-width:800px"] { max-width: 800px !important; }
+        .modal-content[style*="max-width:900px"] { max-width: 900px !important; }
 
-        .vtr-info{display:flex;align-items:center;gap:10px;flex:1 1 200px;}
-        .vtr-id{font-weight:600;color:#e6eef6;font-size:14px}
-        .vtr-badges{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-        .vtr-service{display:inline-block;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(16,185,129,0.2);color:var(--success)}
-        .j-counter{display:inline-flex;gap:4px;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(245,158,11,0.2);color:var(--warning)}
-        .vtr-duration{font-weight:600;font-size:12px;min-width:60px;text-align:right;color:var(--warning)}
-        
-        .vtr-actions{display:flex;gap:6px;flex-wrap:wrap}
-        /* FIM ESTILO COMPACTO */
-        
-        .chip{background:rgba(255,255,255,0.03);padding:6px 10px;border-radius:999px;font-size:12px;display:inline-block}
-        .small{font-size:12px;color:var(--muted)}
-        
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
-        
-        .modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:1000;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
-        .modal.active{display:flex}
-        .modal-content{background:var(--card);border-radius:12px;padding:24px;max-width:700px;width:100%;max-height:90vh;overflow-y:auto;margin:auto}
-        .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+        .modal-header{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            border-bottom:1px solid var(--border-color);
+            padding-bottom:10px;
+            margin-bottom:15px;
+        }
         .modal-title{font-size:18px;font-weight:600}
-        .modal-close{background:transparent;border:none;color:var(--muted);font-size:24px;cursor:pointer;padding:0;width:32px;height:32px}
+        .modal-close{
+            color:var(--text-muted);
+            font-size:28px;
+            font-weight:bold;
+            cursor:pointer;
+        }
+        .modal-close:hover,.modal-close:focus{color:var(--text-primary);text-decoration:none}
         
-        .crew-input-group{background:rgba(255,255,255,0.03);padding:12px;border-radius:8px;margin-bottom:10px;border:1px solid rgba(255,255,255,0.05)}
+        /* Outros Componentes */
+        .chip{
+            display:inline-block;
+            background:var(--glass);
+            color:var(--text-primary);
+            padding:4px 10px;
+            border-radius:16px;
+            font-size:12px;
+            border:1px solid var(--border-color);
+        }
+        .small{font-size:12px;color:var(--text-muted)}
+        
+        .crew-input-group{
+            border:1px solid var(--border-color);
+            padding:10px;
+            border-radius:8px;
+            margin-bottom:10px;
+            background:var(--glass);
+            transition: background 0.3s, border-color 0.3s;
+        }
         .crew-input-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-        .crew-input-header h4{margin:0;font-size:13px;color:var(--accent)}
+        .crew-input-header h4{margin:0;font-size:14px;color:var(--accent)}
         
-        .chart-container{background:var(--glass);border-radius:8px;padding:16px;margin-bottom:16px}
-        canvas{max-height:300px}
+        .search-filter-bar{
+            display:flex;
+            gap:12px;
+            align-items:center;
+        }
+        .search-box{flex:1}
+        .search-box input{margin-bottom:0}
         
-        .tabs{display:flex;gap:8px;margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.1)}
-        .tab{padding:10px 16px;cursor:pointer;border:none;background:transparent;color:var(--muted);font-size:14px;font-weight:600;border-bottom:2px solid transparent;transition:all 0.2s}
-        .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
-        .tab-content{display:none}
-        .tab-content.active{display:block}
-        
+        /* Estilos do modal de busca rápida */
+        #quickSearchResult {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+        }
+        .found-vtr {
+            background: rgba(6, 182, 212, 0.1);
+            color: var(--accent);
+            padding: 5px;
+            border-radius: 4px;
+        }
+        .light-mode .found-vtr {
+             background: rgba(2, 132, 199, 0.1);
+        }
+        .vtr-warning {
+             color: var(--danger);
+             font-size: 11px;
+             margin-top: 5px;
+        }
+
+        /* Estilos para a tab de estatísticas */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 15px;
+        }
+        .tab {
+            background: none;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            color: var(--text-muted);
+            border-bottom: 2px solid transparent;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .tab:hover {
+            color: var(--text-primary);
+        }
+        .tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+            font-weight: 600;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .chart-container {
+            margin-bottom: 25px;
+        }
+
+        /* Estilo para a tabela de desempenho */
+        .performance-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+        .performance-table th, .performance-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .performance-table th {
+            background: var(--glass);
+        }
+        .performance-table tr:hover {
+            background: var(--glass);
+        }
+
+        /* Estilos de Ocorrências */
         .occurrence-item {
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--glass);
             border-radius: 8px;
             padding: 15px;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             border-left: 4px solid var(--warning);
+            transition: background 0.3s;
         }
         .occurrence-header {
             display: flex;
@@ -114,114 +387,93 @@
             margin-bottom: 8px;
         }
         .occurrence-vtr {
-            font-weight: 700;
-            color: var(--accent);
-            font-size: 15px;
-        }
-        .occurrence-j {
             font-weight: 600;
-            color: var(--warning);
-            font-size: 13px;
+            color: var(--accent);
         }
         .occurrence-protocol {
-            background: var(--glass);
+            background: var(--card);
+            color: var(--accent);
             padding: 4px 8px;
-            border-radius: 4px;
+            border-radius: 6px;
             font-size: 12px;
-            color: #a78bfa;
             font-weight: 600;
+            border: 1px solid var(--border-color);
+            transition: background 0.3s;
+        }
+        .occurrence-j {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px dashed var(--border-color);
         }
         .occurrence-actions {
             font-size: 13px;
-            color: #e6eef6;
-            white-space: pre-wrap; 
-            margin-top: 8px;
-            padding-top: 8px;
-            border-top: 1px dashed rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
         }
-
-        /* Estilos específicos para o novo modal de busca */
-        #quickSearchVtr {
-            width: 100%;
-            margin-bottom: 15px;
-        }
-        #quickSearchResult {
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 8px;
-            padding: 10px;
-            min-height: 50px;
-            color: var(--muted);
-            text-align: center;
-        }
-        .found-vtr {
-            background: rgba(6, 182, 212, 0.1);
-            padding: 10px;
-            border-radius: 6px;
+        .occurrence-actions strong {
+            color: var(--text-muted);
             font-weight: 600;
-            color: var(--accent);
-            text-align: left;
-            margin-bottom: 10px;
-        }
-        .vtr-warning {
-            color: var(--danger);
-            font-weight: 600;
-            margin-top: 10px;
         }
 
-        /* Estilo para o modal de adicionar unidades */
-        #unitsToAddContainer {
-            max-height: 400px;
-            overflow-y: auto;
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 8px;
-            padding: 10px;
-        }
-
-        /* Estilo para a tabela de desempenho */
-        .performance-table th, .performance-table td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        .performance-table th {
-            background: rgba(255,255,255,0.05);
-        }
-        .performance-table tr:hover {
-            background: rgba(255,255,255,0.02);
-        }
-        
         /* Estilos para o modal de detalhes da VTR */
         .empenho-history-item {
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--glass);
+            border-radius: 8px;
             padding: 10px;
-            border-radius: 6px;
             margin-bottom: 10px;
             border-left: 3px solid var(--accent);
+        }
+        .empenho-history-item pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            padding: 8px;
+            margin-top: 5px;
+            border-radius: 4px;
+            background: rgba(0,0,0,0.2);
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+        .light-mode .empenho-history-item pre {
+            background: rgba(0,0,0,0.05);
+            color: var(--text-primary);
         }
         .empenho-history-item strong {
             color: var(--warning);
         }
-        .empenho-history-item .small {
-            color: var(--muted);
+
+        /* Ícone do tema */
+        .theme-icon {
+            font-size: 16px;
+            margin-right: 4px;
         }
-        .empenho-history-item pre {
-            white-space: pre-wrap;
-            background: rgba(0,0,0,0.2);
-            padding: 8px;
-            border-radius: 4px;
-            margin-top: 8px;
-            font-size: 12px;
-            overflow-x: auto;
+
+        /* Animação de alerta */
+        @keyframes pulse-red {
+            0% {box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);}
+            70% {box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);}
+            100% {box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);}
         }
-        
-        @media (max-width:700px){.row{flex-direction:column}.dashboard-grid{grid-template-columns:1fr}}
+
+        @media (max-width:900px){.dashboard-grid{grid-template-columns:repeat(2,1fr)}}
+        @media (max-width:700px){
+            .row{flex-direction:column}
+            .dashboard-grid{grid-template-columns:1fr}
+            header{flex-direction:column;align-items:flex-start}
+            .search-filter-bar{flex-direction:column;gap:8px}
+            .search-box{width:100%}
+        }
     </style>
 </head>
-<body>
+<body id="appBody">
     <div class="app">
         <header>
             <h1>🚔 Mapa da Força — Controle de Unidades</h1>
             <div style="display:flex;gap:8px">
+                <button id="toggleThemeBtn" class="ghost small" onclick="toggleTheme()">
+                    <span class="theme-icon">🌙</span> <span id="themeText">Modo Claro</span>
+                </button>
                 <button id="openQuickEmpenhoBtn" class="success small">⚡ Empenho Rápido</button>
                 <button id="openStatsBtn" class="ghost small">📊 Estatísticas</button>
             </div>
@@ -260,6 +512,8 @@
                     </div>
                     <div style="display:flex;gap:8px;flex-wrap:wrap">
                         <button id="openAddUnitBtn" class="ghost small" onclick="openAddUnitModal()">+ Unidade</button> 
+                        <button id="openRemoveUnitBtn" class="ghost small" onclick="openRemoveUnitModal()">- Unidade</button> 
+                        <button id="openRestoreUnitBtn" class="ghost small" onclick="openRestoreUnitModal()">🔄 Restaurar</button> 
                         <button id="exportPdf" class="ghost small">📄 PDF</button>
                         <button id="exportCsv" class="ghost small">📊 CSV</button>
                         <button id="saveLocal" class="success small">💾 Salvar</button>
@@ -275,14 +529,14 @@
                     <div class="search-box">
                         <input type="text" id="searchVtr" placeholder="🔍 Buscar viatura por ID ou tripulante..." />
                     </div>
-                    <select id="filterService">
+                    <select id="filterService" style="width:200px">
                         <option value="">Todos os Serviços</option>
                         <option value="ORDINARIO">ORDINÁRIO</option>
                         <option value="SEG">SEG</option>
                         <option value="POG">POG</option>
                         <option value="OPERAÇÃO">OPERAÇÃO</option>
                     </select>
-                    <select id="filterUnit">
+                    <select id="filterUnit" style="width:200px">
                         <option value="">Todas as Unidades</option>
                     </select>
                 </div>
@@ -306,6 +560,50 @@
                 <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:8px">
                     <button class="ghost" onclick="closeAddUnitModal()">Cancelar</button>
                     <button id="addUnitsBtn" class="success" onclick="addSelectedUnits()">Adicionar Unidades</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" id="removeUnitModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">Remover Unidades do Controle</div>
+                    <button class="modal-close" onclick="closeRemoveUnitModal()">×</button>
+                </div>
+                
+                <p class="small">Selecione a unidade que deseja remover. Os dados de empenho serão **salvos** no histórico da sessão.</p>
+
+                <div style="margin-top:16px;">
+                    <label>Unidade a ser removida do controle ativo</label>
+                    <select id="unitToRemoveSelect">
+                        </select>
+                </div>
+
+                <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:8px">
+                    <button class="ghost" onclick="closeRemoveUnitModal()">Cancelar</button>
+                    <button id="removeUnitBtn" class="danger">Remover e Salvar Dados</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal" id="restoreUnitModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">🔄 Restaurar Unidades Removidas</div>
+                    <button class="modal-close" onclick="closeRestoreUnitModal()">×</button>
+                </div>
+                
+                <p class="small">Selecione a unidade que deseja **restaurar** para o controle ativo. Os dados de empenho serão mantidos.</p>
+
+                <div style="margin-top:16px;">
+                    <label>Unidade a ser restaurada</label>
+                    <select id="unitToRestoreSelect">
+                        </select>
+                </div>
+
+                <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:8px">
+                    <button class="ghost" onclick="closeRestoreUnitModal()">Cancelar</button>
+                    <button id="restoreUnitBtn" class="success">Restaurar para Controle Ativo</button>
                 </div>
             </div>
         </div>
@@ -394,7 +692,7 @@
                     <input id="quickSearchVtr" type="text" placeholder="Digite a ID da VTR" />
                 </div>
 
-                <div id="quickSearchResult" style="margin-bottom:15px;">
+                <div id="quickSearchResult">
                     Nenhuma viatura selecionada.
                 </div>
 
@@ -482,7 +780,6 @@
                     </div>
             </div>
         </div>
-
     </div>
 
     <script>
@@ -516,13 +813,50 @@
 
         let session = {operator:'',datetime:'',selectedUnits:[],id:null};
         let unitsData = {};
+        let removedUnitsData = {}; // Histórico de unidades removidas
+        let vtrHistoryData = []; // NOVO: Histórico de viaturas excluídas individualmente
         let editingVtr = null;
-        let currentVtrForEmpenho = null; // Usado pelo modal de empenho padrão
-        let quickEmpenhoVtr = null; // Usado pelo modal de empenho rápido
+        let currentVtrForEmpenho = null; 
+        let quickEmpenhoVtr = null; 
         let timerInterval = null;
         let alertsShown = new Set();
         let empenhosChart = null; 
         let horarioChart = null;  
+
+        // ====== Implementação do Tema (Modo Claro/Escuro) ======
+        
+        /**
+         * Aplica o tema (dark ou light) à interface.
+         * @param {string} theme - O tema a ser aplicado ('dark' ou 'light').
+         */
+        function applyTheme(theme) {
+            const body = document.getElementById('appBody');
+            const icon = document.querySelector('.theme-icon');
+            const text = document.getElementById('themeText');
+
+            if (theme === 'light') {
+                body.classList.add('light-mode');
+                if(icon) icon.textContent = '☀️';
+                if(text) text.textContent = 'Modo Escuro';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.classList.remove('light-mode');
+                if(icon) icon.textContent = '🌙';
+                if(text) text.textContent = 'Modo Claro';
+                localStorage.setItem('theme', 'dark');
+            }
+            // Atualiza os gráficos para as novas cores de tema, se existirem
+            if(empenhosChart) drawCharts();
+        }
+
+        /**
+         * Alterna entre o Modo Claro e o Modo Escuro.
+         */
+        function toggleTheme() {
+            const currentTheme = document.getElementById('appBody').classList.contains('light-mode') ? 'light' : 'dark';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            applyTheme(newTheme);
+        }
 
         // ====== Inicialização ======
         (function init(){
@@ -548,12 +882,20 @@
             now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
             document.getElementById('dateTime').value = now.toISOString().slice(0,16);
             
+            // Carrega e aplica o tema ANTES de carregar a sessão
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            applyTheme(savedTheme);
+            
             loadFromLocal();
 
             // Adiciona listener para a busca rápida
             document.getElementById('quickSearchVtr').addEventListener('input', findVtrForQuickEmpenho);
+            
+            // Adiciona listeners para os botões de remoção e restauração
+            document.getElementById('removeUnitBtn').addEventListener('click', removeSelectedUnit);
+            document.getElementById('restoreUnitBtn').addEventListener('click', restoreSelectedUnit);
         })();
-
+        
         // ====== Funções de Utilidade ======
         function getJText(value){
             const empenho = empenhosJ.find(e => e.value === value);
@@ -565,20 +907,20 @@
         }
 
         function timeDifference(start, end = Date.now()){
-            const diffMs = end - new Date(start);
+            const diffMs = new Date(end) - new Date(start);
             const diffMins = Math.floor(diffMs / 60000);
             const hours = Math.floor(diffMins / 60);
             const minutes = diffMins % 60;
             return `${hours > 0 ? hours + 'h ' : ''}${minutes}m`;
         }
         
-        // Retorna a VTR e seus índices
         function findVtrById(id) {
-            for (const unitKey in unitsData) {
-                const vtrs = unitsData[unitKey].vtrs;
+            // Busca APENAS nas unidades ativas
+            for (const unitKey of session.selectedUnits) {
+                const vtrs = unitsData[unitKey]?.vtrs || [];
                 const vtrIndex = vtrs.findIndex(v => v.id.toLowerCase() === id.toLowerCase());
                 if (vtrIndex !== -1) {
-                    return { unitKey, vtrIndex, vtr: vtrs[vtrIndex] };
+                    return { unitKey, vtrIndex, vtr: vtrs[vtrIndex], isActive: true };
                 }
             }
             return null;
@@ -589,7 +931,9 @@
             if (session.id) {
                 const sessionToSave = {
                     session: session,
-                    unitsData: unitsData
+                    unitsData: unitsData,
+                    removedUnitsData: removedUnitsData,
+                    vtrHistoryData: vtrHistoryData // Salva o novo histórico
                 };
                 localStorage.setItem('currentSession', JSON.stringify(sessionToSave));
             }
@@ -598,6 +942,7 @@
         function loadFilterUnits() {
             const filterUnit = document.getElementById('filterUnit');
             filterUnit.innerHTML = '<option value="">Todas as Unidades</option>';
+            // Adiciona apenas as unidades ativas no filtro
             session.selectedUnits.forEach(uk=>{
                 const opt = document.createElement('option');
                 opt.value = uk;
@@ -612,10 +957,13 @@
                 const data = JSON.parse(savedSession);
                 session = data.session;
                 unitsData = data.unitsData;
+                removedUnitsData = data.removedUnitsData || {};
+                vtrHistoryData = data.vtrHistoryData || []; // Carrega o novo histórico
 
                 document.getElementById('operatorName').value = session.operator;
                 document.getElementById('dateTime').value = session.datetime.slice(0,16);
-                // Marca as unidades na tela 1, caso o usuário volte
+                
+                // Marca as unidades ativas no seletor da Tela 1
                 session.selectedUnits.forEach(uk => {
                     const cb = document.getElementById(`unit_${uk}`);
                     if (cb) cb.checked = true;
@@ -625,7 +973,7 @@
                     document.getElementById('opSummary').textContent = session.operator;
                     document.getElementById('dtSummary').textContent = new Date(session.datetime).toLocaleString('pt-BR');
                     
-                    loadFilterUnits(); // Carrega o filtro com as unidades salvas
+                    loadFilterUnits();
 
                     document.getElementById('screen1').style.display = 'none';
                     document.getElementById('screen2').style.display = 'block';
@@ -663,14 +1011,26 @@
             session.selectedUnits = selected;
             session.id = Date.now(); 
 
+            // Reinicializa unitsData apenas com as unidades selecionadas, 
+            // e preserva a regra de priorizar dados de unidades removidas se forem re-selecionadas.
+            const newUnitsData = {};
             selected.forEach(uk=>{
-                if(!unitsData[uk]) unitsData[uk] = {vtrs:[]};
+                 if (removedUnitsData.hasOwnProperty(uk)) {
+                     newUnitsData[uk] = removedUnitsData[uk];
+                     delete removedUnitsData[uk]; // Limpa do removedUnitsData
+                 } else {
+                     newUnitsData[uk] = {vtrs:[]};
+                 }
             });
+            unitsData = newUnitsData;
+
+            // Zera o histórico de viaturas se for um novo turno (para evitar acúmulo infinito)
+            vtrHistoryData = []; 
 
             document.getElementById('opSummary').textContent = op;
             document.getElementById('dtSummary').textContent = new Date(dt).toLocaleString('pt-BR');
 
-            loadFilterUnits(); // Carrega o filtro
+            loadFilterUnits();
 
             document.getElementById('screen1').style.display = 'none';
             document.getElementById('screen2').style.display = 'block';
@@ -681,24 +1041,32 @@
             saveToLocal();
         });
         
-        // ====== Funcionalidade de Adicionar Unidades (Mantido) ======
+        // ====== Funcionalidade de Adicionar Unidades (TELA 2) ======
         function openAddUnitModal() {
             const modal = document.getElementById('addUnitModal');
             const container = document.getElementById('unitsToAddContainer');
             container.innerHTML = '';
             
-            const unitsNotSelected = Object.keys(units).filter(k => !session.selectedUnits.includes(k));
+            // Unidades que não estão em selectedUnits
+            const unitsNotSelected = Object.keys(units).filter(k => 
+                !session.selectedUnits.includes(k) 
+            );
 
             if (unitsNotSelected.length === 0) {
-                container.innerHTML = '<p class="small" style="text-align:center;padding:10px;">Todas as unidades estão ativas.</p>';
+                container.innerHTML = '<p class="small" style="text-align:center;padding:10px;">Todas as unidades disponíveis estão ativas.</p>';
                 document.getElementById('addUnitsBtn').disabled = true;
             } else {
                 document.getElementById('addUnitsBtn').disabled = false;
                 unitsNotSelected.forEach(k => {
                     const v = units[k];
+                    const hasRemovedData = removedUnitsData.hasOwnProperty(k);
                     const div = document.createElement('div');
                     div.className = 'unit-checkbox';
-                    div.innerHTML = `<input type="checkbox" id="add_unit_${k}" value="${k}"><label for="add_unit_${k}">${v}</label>`;
+                    div.innerHTML = `
+                        <input type="checkbox" id="add_unit_${k}" value="${k}">
+                        <label for="add_unit_${k}">
+                            ${v} ${hasRemovedData ? '(Com Dados Salvos)' : ''}
+                        </label>`;
                     container.appendChild(div);
                 });
             }
@@ -721,19 +1089,156 @@
             selected.forEach(uk => {
                 if (!session.selectedUnits.includes(uk)) {
                     session.selectedUnits.push(uk);
-                    unitsData[uk] = { vtrs: [] };
+                    // Prioriza dados da unidade que pode ter sido removida anteriormente
+                    if (removedUnitsData.hasOwnProperty(uk)) {
+                         unitsData[uk] = removedUnitsData[uk];
+                         delete removedUnitsData[uk];
+                    } else {
+                         unitsData[uk] = { vtrs: [] };
+                    }
                 }
             });
 
             closeAddUnitModal();
-            loadFilterUnits(); // Atualiza o filtro de unidades
-            renderUnits(); // Re-renderiza a tela
-            updateDashboard(); // Atualiza estatísticas
+            loadFilterUnits();
+            renderUnits();
+            updateDashboard();
             saveToLocal();
             alert(`${selected.length} unidade(s) adicionada(s) com sucesso!`);
         }
 
-        // ====== Função para Finalizar Sessão (Mantido) ======
+        // ====== Funcionalidade de Excluir Unidades (TELA 2) ======
+
+        function openRemoveUnitModal() {
+            const modal = document.getElementById('removeUnitModal');
+            const select = document.getElementById('unitToRemoveSelect');
+            select.innerHTML = '<option value="">Selecione a Unidade</option>';
+
+            // Lista apenas as unidades ATIVAS no controle
+            const activeUnitsKeys = session.selectedUnits.filter(uk => unitsData.hasOwnProperty(uk));
+
+            if (activeUnitsKeys.length === 0) {
+                select.innerHTML = '<option value="" disabled>Nenhuma unidade ativa no controle para remover.</option>';
+                document.getElementById('removeUnitBtn').disabled = true;
+            } else {
+                document.getElementById('removeUnitBtn').disabled = false;
+                activeUnitsKeys.forEach(uk => {
+                    const numVtrs = unitsData[uk]?.vtrs.length || 0;
+                    const opt = document.createElement('option');
+                    opt.value = uk;
+                    opt.textContent = `${units[uk]} (${numVtrs} VTRs)`;
+                    select.appendChild(opt);
+                });
+            }
+
+            modal.classList.add('active');
+        }
+
+        function closeRemoveUnitModal() {
+            document.getElementById('removeUnitModal').classList.remove('active');
+        }
+
+        function removeSelectedUnit() {
+            const unitKey = document.getElementById('unitToRemoveSelect').value;
+
+            if (!unitKey) {
+                alert('Selecione uma unidade para remover.');
+                return;
+            }
+
+            const unitName = units[unitKey];
+            const numVtrs = unitsData[unitKey]?.vtrs.length || 0;
+
+            if (!confirm(`Tem certeza que deseja remover a unidade ${unitName} do controle ativo? Os dados das ${numVtrs} viaturas serão SALVOS no histórico de removidas.`)) {
+                return;
+            }
+
+            // 1. Salva os dados na variável de histórico de UNIDADES
+            if(unitsData.hasOwnProperty(unitKey)) {
+                removedUnitsData[unitKey] = unitsData[unitKey];
+            }
+
+            // 2. Remove dos dados ativos
+            delete unitsData[unitKey];
+            
+            // 3. Remove da lista de controle da sessão
+            session.selectedUnits = session.selectedUnits.filter(uk => uk !== unitKey);
+
+            closeRemoveUnitModal();
+            loadFilterUnits();
+            renderUnits();
+            updateDashboard();
+            saveToLocal();
+            alert(`Unidade ${unitName} removida do controle ativo. Dados salvos e pronta para restauração.`);
+        }
+        
+        // ====== Funcionalidade de Restaurar Unidades (TELA 2) ======
+
+        function openRestoreUnitModal() {
+            const modal = document.getElementById('restoreUnitModal');
+            const select = document.getElementById('unitToRestoreSelect');
+            select.innerHTML = '<option value="">Selecione a Unidade</option>';
+
+            // Lista apenas as unidades que estão em removedUnitsData
+            const removedUnitsKeys = Object.keys(removedUnitsData);
+
+            if (removedUnitsKeys.length === 0) {
+                select.innerHTML = '<option value="" disabled>Nenhuma unidade no histórico para restaurar.</option>';
+                document.getElementById('restoreUnitBtn').disabled = true;
+            } else {
+                document.getElementById('restoreUnitBtn').disabled = false;
+                removedUnitsKeys.forEach(uk => {
+                    const numVtrs = removedUnitsData[uk]?.vtrs.length || 0;
+                    const opt = document.createElement('option');
+                    opt.value = uk;
+                    opt.textContent = `${units[uk]} (${numVtrs} VTRs salvas)`;
+                    select.appendChild(opt);
+                });
+            }
+
+            modal.classList.add('active');
+        }
+
+        function closeRestoreUnitModal() {
+            document.getElementById('restoreUnitModal').classList.remove('active');
+        }
+
+        function restoreSelectedUnit() {
+            const unitKey = document.getElementById('unitToRestoreSelect').value;
+
+            if (!unitKey) {
+                alert('Selecione uma unidade para restaurar.');
+                return;
+            }
+            
+            if (!removedUnitsData.hasOwnProperty(unitKey)) {
+                alert('Erro: Unidade não encontrada no histórico de remoções.');
+                return;
+            }
+
+            const unitName = units[unitKey];
+
+            // 1. Move os dados do histórico para a lista ativa
+            unitsData[unitKey] = removedUnitsData[unitKey];
+            
+            // 2. Adiciona à lista de controle da sessão
+            if (!session.selectedUnits.includes(unitKey)) {
+                session.selectedUnits.push(unitKey);
+            }
+
+            // 3. Remove do histórico
+            delete removedUnitsData[unitKey];
+
+            closeRestoreUnitModal();
+            loadFilterUnits();
+            renderUnits();
+            updateDashboard();
+            saveToLocal();
+            alert(`Unidade ${unitName} restaurada para o controle ativo com sucesso!`);
+        }
+
+
+        // ====== Função para Finalizar Sessão ======
         document.getElementById('finishBtn').addEventListener('click', finishSession);
 
         function finishSession() {
@@ -745,6 +1250,8 @@
 
             session = {operator:'',datetime:'',selectedUnits:[],id:null};
             unitsData = {};
+            removedUnitsData = {}; 
+            vtrHistoryData = []; // Zera o histórico de viaturas excluídas
             alertsShown = new Set();
             
             localStorage.removeItem('currentSession');
@@ -763,25 +1270,47 @@
             alert('Turno finalizado com sucesso! Pronto para iniciar um novo Mapa da Força.');
         }
 
-        // ====== Dashboard, Alertas e Timers (Mantidos) ======
+        // ====== Dashboard, Alertas e Timers ======
+
+        function getAllVtrs() {
+            const allVtrs = [];
+            
+            // 1. Viaturas Ativas
+            Object.keys(unitsData).forEach(uk => {
+                unitsData[uk]?.vtrs.forEach(vtr => {
+                    allVtrs.push({...vtr, unitName: units[uk], status: 'ATIVA'});
+                });
+            });
+
+            // 2. Viaturas de Unidades Removidas
+            Object.keys(removedUnitsData).forEach(uk => {
+                removedUnitsData[uk]?.vtrs.forEach(vtr => {
+                    allVtrs.push({...vtr, unitName: units[uk], status: 'UNIDADE_REMOVIDA'});
+                });
+            });
+            
+            // 3. Viaturas Excluídas Individualmente
+            vtrHistoryData.forEach(vtr => {
+                allVtrs.push({...vtr, unitName: units[vtr.unitKey], status: 'VTR_EXCLUIDA'});
+            });
+
+            return allVtrs;
+        }
+
         function updateDashboard(){
-            let totalVtrs = 0;
+            const allVtrs = getAllVtrs();
+            let totalVtrs = allVtrs.length;
             let totalEmpenhos = 0;
             let empenhoCounts = {};
-            let activeVtrs = 0;
+            // Conta apenas as ativas (status ATIVA)
+            let activeVtrs = allVtrs.filter(v => v.status === 'ATIVA').length;
 
-            session.selectedUnits.forEach(uk=>{
-                const vtrs = unitsData[uk]?.vtrs || [];
-                totalVtrs += vtrs.length;
-                
-                vtrs.forEach(vtr=>{
-                    if(vtr.empenhos && vtr.empenhos.length > 0){
-                        activeVtrs++;
-                        totalEmpenhos += vtr.empenhos.length;
-                        const lastEmpenho = vtr.empenhos[vtr.empenhos.length - 1];
-                        empenhoCounts[lastEmpenho.j] = (empenhoCounts[lastEmpenho.j] || 0) + 1;
-                    }
-                });
+            allVtrs.forEach(vtr=>{
+                if(vtr.empenhos && vtr.empenhos.length > 0){
+                    totalEmpenhos += vtr.empenhos.length;
+                    const lastEmpenho = vtr.empenhos[vtr.empenhos.length - 1];
+                    empenhoCounts[lastEmpenho.j] = (empenhoCounts[lastEmpenho.j] || 0) + 1;
+                }
             });
 
             const topJ = Object.entries(empenhoCounts).sort((a,b)=>b[1]-a[1])[0];
@@ -789,11 +1318,11 @@
             const dashboard = document.getElementById('dashboardStats');
             dashboard.innerHTML = `
                 <div class="stat-card" style="cursor:pointer;" onclick="openDetailsModal('total')">
-                    <div class="stat-label">Viaturas Total</div>
+                    <div class="stat-label">Viaturas Total (Sessão)</div>
                     <div class="stat-value">${totalVtrs}</div>
                 </div>
                 <div class="stat-card" style="cursor:pointer;" onclick="openDetailsModal('active')">
-                    <div class="stat-label">Viaturas Ativas</div>
+                    <div class="stat-label">Viaturas Ativas (Controle)</div>
                     <div class="stat-value">${activeVtrs}</div>
                 </div>
                 <div class="stat-card">
@@ -813,42 +1342,43 @@
             const content = document.getElementById('detailsModalContent');
             content.innerHTML = '';
 
-            title.textContent = type === 'total' ? 'Detalhes: Todas as Viaturas' : 'Detalhes: Viaturas Ativas';
+            title.textContent = type === 'total' ? 'Detalhes: Todas as Viaturas (Ativas/Histórico)' : 'Detalhes: Viaturas Ativas no Controle';
 
-            let allVtrs = [];
-            session.selectedUnits.forEach(uk => {
-                const unitName = units[uk];
-                const vtrs = unitsData[uk]?.vtrs || [];
+            const allVtrs = getAllVtrs();
 
-                vtrs.forEach(vtr => {
-                    const lastEmpenho = vtr.empenhos.length > 0 ? vtr.empenhos[vtr.empenhos.length - 1] : null;
-
-                    if (type === 'total' || (type === 'active' && lastEmpenho)) {
-                        allVtrs.push({
-                            id: vtr.id,
-                            unit: unitName,
-                            lastEmpenho: lastEmpenho
-                        });
-                    }
-                });
+            let filteredVtrs = allVtrs.filter(vtr => {
+                if (type === 'total') return true;
+                return vtr.status === 'ATIVA';
+            });
+            
+            // Tenta encontrar o índice da VTR no array ATIVO, se ela for ATIVA.
+            filteredVtrs = filteredVtrs.map(vtr => {
+                if (vtr.status === 'ATIVA') {
+                    const unitVtrs = unitsData[vtr.unitKey]?.vtrs || [];
+                    const vtrIndex = unitVtrs.findIndex(item => item.id === vtr.id);
+                    return { ...vtr, vtrIndex };
+                }
+                return vtr;
             });
 
-            if (allVtrs.length === 0) {
+
+            if (filteredVtrs.length === 0) {
                 content.innerHTML = '<p class="small" style="text-align:center;padding:20px;">Nenhuma viatura encontrada para este filtro.</p>';
                 modal.classList.add('active');
                 return;
             }
 
-            allVtrs.forEach(vtr => {
+            filteredVtrs.forEach(vtr => {
                 const item = document.createElement('div');
-                const isAlert = vtr.lastEmpenho && ALERT_THRESHOLDS[vtr.lastEmpenho.j] && (Date.now() - new Date(vtr.lastEmpenho.time)) / 60000 > ALERT_THRESHOLDS[vtr.lastEmpenho.j];
+                const lastEmpenho = vtr.empenhos.length > 0 ? vtr.empenhos[vtr.empenhos.length - 1] : null;
+                const isAlert = lastEmpenho && ALERT_THRESHOLDS[lastEmpenho.j] && (Date.now() - new Date(lastEmpenho.time)) / 60000 > ALERT_THRESHOLDS[lastEmpenho.j];
                 item.className = 'vtr-item' + (isAlert ? ' alert' : '');
                 
-                let statusHtml = '<div class="j-counter" style="background:rgba(255,255,255,0.1);color:var(--muted)">Sem Empenho J</div>';
-                let service = vtr.lastEmpenho ? vtr.lastEmpenho.j : 'N/A';
+                let statusHtml = '<div class="j-counter" style="background:rgba(255,255,255,0.1);color:var(--text-muted)">Sem Empenho J</div>';
+                let service = vtr.service;
                 
-                if (vtr.lastEmpenho) {
-                    const duration = timeDifference(vtr.lastEmpenho.time);
+                if (lastEmpenho) {
+                    const duration = timeDifference(lastEmpenho.time);
                     const currentClass = isAlert ? 'alert-badge' : 'empenho-current';
                     
                     statusHtml = `
@@ -858,22 +1388,116 @@
                         </div>
                     `;
                 }
+                
+                let statusBadge = '';
+                if (vtr.status === 'REMOVIDA' || vtr.status === 'UNIDADE_REMOVIDA') {
+                     statusBadge = '<span class="alert-badge" style="background:var(--text-muted);margin-left:8px;">UNIDADE REMOVIDA</span>';
+                } else if (vtr.status === 'VTR_EXCLUIDA') {
+                     statusBadge = '<span class="alert-badge" style="background:var(--danger);margin-left:8px;">VTR EXCLUÍDA</span>';
+                }
+                
+                const showDetailsButton = vtr.status === 'ATIVA' ? 
+                    `<button class="small ghost" onclick="event.stopPropagation(); openVtrDetailsModal('${vtr.unitKey}', ${vtr.vtrIndex})">Ver Detalhes</button>` : 
+                    `<button class="small ghost" onclick="event.stopPropagation(); openVtrHistoryDetailsModal('${vtr.unitKey}', '${vtr.id}', '${vtr.status}')">Ver Histórico</button>`;
 
                 item.innerHTML = `
                     <div class="vtr-info">
                         <div class="vtr-id">
                             ${vtr.id}
-                            ${isAlert ? '<span class="alert-badge">ALERTA TEMPO!</span>' : ''}
+                            ${statusBadge}
+                            ${isAlert && vtr.status === 'ATIVA' ? '<span class="alert-badge">ALERTA TEMPO!</span>' : ''}
                         </div>
                         ${statusHtml}
                     </div>
                     <div class="small">
-                        Unidade: **${vtr.unit}** | Serviço: ${vtr.lastEmpenho ? getJText(vtr.lastEmpenho.j) : 'VTR em Base/Sem J Ativo'}
+                        Unidade: **${vtr.unitName}** | Serviço: ${lastEmpenho ? getJText(lastEmpenho.j) : 'VTR em Base/Sem J Ativo'}
                     </div>
-                    ${vtr.lastEmpenho ? `<div class="small" style="margin-top:4px;">Início: ${formatTime(vtr.lastEmpenho.time)} ${vtr.lastEmpenho.protocol ? `| Protocolo: <span class="protocol-badge">${vtr.lastEmpenho.protocol}</span>` : ''}</div>` : ''}
+                    ${lastEmpenho ? `<div class="small" style="margin-top:4px;">Início: ${formatTime(lastEmpenho.time)} ${lastEmpenho.protocol ? `| Protocolo: <span class="protocol-badge">${lastEmpenho.protocol}</span>` : ''}</div>` : ''}
+                    <div class="vtr-actions">
+                        ${showDetailsButton}
+                    </div>
                 `;
                 content.appendChild(item);
             });
+
+            modal.classList.add('active');
+        }
+        
+        // NOVO: Função para detalhes de viaturas em HISTÓRICO
+        function openVtrHistoryDetailsModal(unitKey, vtrId, status) {
+            const modal = document.getElementById('vtrDetailsModal');
+            const title = document.getElementById('vtrDetailsModalTitle');
+            const content = document.getElementById('vtrDetailsModalContent');
+            content.innerHTML = '';
+            
+            let vtr = null;
+            
+            if (status === 'VTR_EXCLUIDA') {
+                vtr = vtrHistoryData.find(v => v.id === vtrId && v.unitKey === unitKey);
+            } else if (status === 'UNIDADE_REMOVIDA' && removedUnitsData[unitKey]) {
+                vtr = removedUnitsData[unitKey].vtrs.find(v => v.id === vtrId);
+            }
+            
+            if (!vtr) {
+                 content.innerHTML = '<p class="small" style="text-align:center;padding:20px;">Detalhes da viatura em histórico não encontrados.</p>';
+                 modal.classList.add('active');
+                 return;
+            }
+
+            title.textContent = `Histórico Detalhado (${status.replace('_', ' ')}): 🚔 ${vtr.id} (${units[unitKey]})`;
+
+            // O restante do HTML é similar ao openVtrDetailsModal
+            const headerHtml = `
+                <div style="margin-bottom:15px; background:rgba(6,182,212,0.1); padding:15px; border-radius:8px;">
+                    <h4 style="margin:0; color:var(--accent);">Informações da Viatura</h4>
+                    <div class="small" style="margin-top:5px;">
+                        **Serviço:** ${vtr.service} | **Unidade:** ${units[unitKey]} | **Telefone:** ${vtr.phone || 'N/A'}
+                    </div>
+                    <div class="small" style="margin-top:5px;">
+                        **Tripulação:** ${vtr.crew.map(m => `${m.rank} ${m.name}`).filter(s => s.trim()).join(' / ') || 'Não informada'}
+                    </div>
+                </div>
+                
+                <h3 style="margin-top:20px;">Histórico de Empenhos (${vtr.empenhos.length} Registros)</h3>
+            `;
+            content.innerHTML += headerHtml;
+            
+            // Conteúdo do histórico (igual à função de detalhes VTR ATIVA)
+            if (vtr.empenhos.length === 0) {
+                content.innerHTML += '<p class="small" style="text-align:center;">Nenhum empenho registrado para esta viatura.</p>';
+            } else {
+                vtr.empenhos.slice().reverse().forEach((empenho, index) => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'empenho-history-item';
+                    
+                    const time = new Date(empenho.time).toLocaleString('pt-BR');
+                    
+                    let durationHtml = '';
+                    if (index < vtr.empenhos.length - 1) {
+                         const nextEmpenho = vtr.empenhos[vtr.empenhos.length - 2 - index];
+                         const duration = timeDifference(empenho.time, nextEmpenho.time);
+                         durationHtml = `<span style="margin-left:15px; font-weight:600; color:var(--success);">Duração: ${duration}</span>`;
+                    } else if (index === 0) {
+                        const duration = timeDifference(empenho.time);
+                         durationHtml = `<span style="margin-left:15px; font-weight:600; color:var(--warning);">Duração Atual: ${duration}</span>`;
+                    }
+                    
+                    itemDiv.innerHTML = `
+                        <div>
+                            <strong>${empenho.j}: ${getJText(empenho.j).split(': ')[1]}</strong>
+                            ${durationHtml}
+                        </div>
+                        <div class="small">
+                            Início: ${time} ${empenho.protocol ? `| Protocolo: **${empenho.protocol}**` : ''}
+                        </div>
+                        ${empenho.actions ? `
+                            <div class="small" style="margin-top:5px;">**Ações Empregadas:**</div>
+                            <pre>${empenho.actions}</pre>
+                        ` : ''}
+                    `;
+                    content.appendChild(itemDiv);
+                });
+            }
 
             modal.classList.add('active');
         }
@@ -925,7 +1549,7 @@
             Notification.requestPermission();
         }
 
-        // ====== Gerenciamento de VTRs (Mantido) ======
+        // ====== Gerenciamento de VTRs ======
         function openVtrModal(unitKey, vtrIndex = null){
             const modal = document.getElementById('vtrModal');
             const container = document.getElementById('crewInputsContainer');
@@ -1020,10 +1644,18 @@
             updateDashboard();
             saveToLocal();
         }
-
+        
+        // NOVO: Função de exclusão que salva no histórico de viaturas
         function deleteVtr(unitKey, vtrIndex){
-            if(confirm(`Tem certeza que deseja remover a viatura ${unitsData[unitKey].vtrs[vtrIndex].id}?`)){
+            const vtr = unitsData[unitKey].vtrs[vtrIndex];
+            if(confirm(`Tem certeza que deseja remover a viatura ${vtr.id}? Seus dados de empenho serão SALVOS no histórico.`)){
+                
+                // 1. Move a VTR para o histórico de viaturas excluídas
+                vtrHistoryData.push(vtr);
+
+                // 2. Remove do array ativo
                 unitsData[unitKey].vtrs.splice(vtrIndex, 1);
+                
                 renderUnits();
                 updateDashboard();
                 saveToLocal();
@@ -1064,11 +1696,10 @@
             saveToLocal();
         }
 
-        // ====== Empenho Rápido (Mantido) ======
+        // ====== Empenho Rápido ======
         document.getElementById('openQuickEmpenhoBtn').addEventListener('click', openQuickEmpenhoModal);
 
         function openQuickEmpenhoModal() {
-            // Limpa o modal e exibe
             document.getElementById('quickSearchVtr').value = '';
             document.getElementById('quickSearchResult').innerHTML = 'Nenhuma viatura selecionada.';
             document.getElementById('quickEmpenhoForm').style.display = 'none';
@@ -1092,6 +1723,7 @@
                 return;
             }
 
+            // A busca é limitada apenas às unidades ativas (implementado na findVtrById)
             const found = findVtrById(searchId);
 
             if (found) {
@@ -1101,7 +1733,6 @@
                         Viatura Encontrada: <strong>${found.vtr.id}</strong> (${units[found.unitKey]})
                     </div>
                 `;
-                // Pré-preenche o J mais comum ou o J1
                 const lastEmpenho = found.vtr.empenhos[found.vtr.empenhos.length - 1];
                 document.getElementById('quickModalEmpenhoJ').value = (lastEmpenho && lastEmpenho.j !== 'J11') ? lastEmpenho.j : 'J1'; 
                 document.getElementById('quickModalProtocol').value = '';
@@ -1148,7 +1779,7 @@
             vtr.empenhos.push(newEmpenho);
         }
 
-        // ====== Renderização e Filtro (Mantido) ======
+        // ====== Renderização e Filtro ======
         function renderUnits(){
             const container = document.getElementById('unitsContainer');
             container.innerHTML = '';
@@ -1165,7 +1796,7 @@
                     <div class="unit-header">
                         <div class="unit-title">
                             ${units[uk]}
-                            <span class="small" id="vtrCount-${uk}">(${unitsData[uk].vtrs.length} Viaturas)</span>
+                            <span class="small" id="vtrCount-${uk}">(${unitsData[uk]?.vtrs.length || 0} Viaturas)</span>
                         </div>
                         <button class="small" onclick="openVtrModal('${uk}', null)">+ Nova VTR</button>
                     </div>
@@ -1176,7 +1807,9 @@
                 const vtrList = document.getElementById(`vtrList-${uk}`);
                 let unitVtrCount = 0;
                 
-                unitsData[uk].vtrs.forEach((vtr, vtrIndex) => {
+                const vtrs = unitsData[uk]?.vtrs || [];
+
+                vtrs.forEach((vtr, vtrIndex) => {
                     if(filterService && filterService !== vtr.service) return;
                     if(search && !vtr.id.toLowerCase().includes(search) && !vtr.crew.some(m => m.name.toLowerCase().includes(search))) return;
                     
@@ -1200,7 +1833,7 @@
                     ` : `
                         <div class="vtr-badges">
                             <span class="vtr-service">${vtr.service}</span>
-                            <span class="j-counter" style="background:rgba(255,255,255,0.1);color:var(--muted)">Em Base</span>
+                            <span class="j-counter" style="background:rgba(255,255,255,0.1);color:var(--text-muted)">Em Base</span>
                         </div>
                     `;
 
@@ -1212,7 +1845,7 @@
                         </div>
                         <div class="vtr-actions">
                             <button class="small success" onclick="openEmpenhoModal('${uk}', ${vtrIndex})">J +</button>
-                            <button class="small ghost" onclick="openVtrModal('${uk}', ${vtrIndex})">Detalhes/Editar</button>
+                            <button class="small ghost" onclick="openVtrDetailsModal('${uk}', ${vtrIndex})">Detalhes</button>
                             <button class="small danger" onclick="deleteVtr('${uk}', ${vtrIndex})">Excluir</button>
                         </div>
                     `;
@@ -1229,7 +1862,7 @@
         document.getElementById('filterService').addEventListener('change', renderUnits);
         document.getElementById('filterUnit').addEventListener('change', renderUnits);
 
-        // ====== Funções de Estatísticas e Análise (Ajustadas) ======
+        // ====== Funções de Estatísticas e Análise ======
         document.getElementById('openStatsBtn').addEventListener('click', openStatsModal);
 
         function openStatsModal() {
@@ -1237,7 +1870,7 @@
             switchTab('charts');
             generateStatistics();
             drawCharts();
-            generatePerformanceStats();
+            generatePerformanceStats(); // Roda a função de desempenho
             generateOcurrenceList();
         }
 
@@ -1251,27 +1884,27 @@
                 hourCounts: {},    
                 durations: [],     
             };
+            
+            // Reune dados de todas as viaturas (Ativas, de Unidades Removidas e Excluídas)
+            const allVtrs = getAllVtrs();
 
-            session.selectedUnits.forEach(uk => {
-                const vtrs = unitsData[uk]?.vtrs || [];
-                vtrs.forEach(vtr => {
-                    vtr.empenhos.forEach((empenho, index) => {
-                        stats.empenhoCounts[empenho.j] = (stats.empenhoCounts[empenho.j] || 0) + 1;
+            allVtrs.forEach(vtr => {
+                vtr.empenhos.forEach((empenho, index) => {
+                    stats.empenhoCounts[empenho.j] = (stats.empenhoCounts[empenho.j] || 0) + 1;
 
-                        const hour = new Date(empenho.time).getHours();
-                        stats.hourCounts[hour] = (stats.hourCounts[hour] || 0) + 1;
+                    const hour = new Date(empenho.time).getHours();
+                    stats.hourCounts[hour] = (stats.hourCounts[hour] || 0) + 1;
 
-                        if (index > 0) {
-                            const prevEmpenho = vtr.empenhos[index - 1];
-                            const startTime = new Date(prevEmpenho.time).getTime();
-                            const endTime = new Date(empenho.time).getTime();
-                            const durationMins = Math.floor((endTime - startTime) / 60000);
-                            stats.durations.push({
-                                j: prevEmpenho.j,
-                                duration: durationMins
-                            });
-                        }
-                    });
+                    if (index > 0) {
+                        const prevEmpenho = vtr.empenhos[index - 1];
+                        const startTime = new Date(prevEmpenho.time).getTime();
+                        const endTime = new Date(empenho.time).getTime();
+                        const durationMins = Math.floor((endTime - startTime) / 60000);
+                        stats.durations.push({
+                            j: prevEmpenho.j,
+                            duration: durationMins
+                        });
+                    }
                 });
             });
 
@@ -1280,6 +1913,11 @@
 
         function drawCharts() {
             const stats = generateStatistics();
+            // Detecta o modo atual para definir as cores
+            const isDarkMode = !document.getElementById('appBody').classList.contains('light-mode');
+            const textColor = isDarkMode ? 'var(--text-muted)' : 'var(--text-primary)';
+            const accentColor = isDarkMode ? '#06b6d4' : '#0284c7';
+            const warningColor = isDarkMode ? '#f59e0b' : '#d97706';
 
             if (empenhosChart) empenhosChart.destroy();
             const empenhoLabels = Object.keys(stats.empenhoCounts).sort();
@@ -1293,16 +1931,26 @@
                     datasets: [{
                         label: 'Ocorrências/Atividades',
                         data: empenhoData,
-                        backgroundColor: 'rgba(6, 182, 212, 0.6)',
-                        borderColor: 'rgba(6, 182, 212, 1)',
+                        backgroundColor: `${accentColor}99`, /* 99 for opacity */
+                        borderColor: accentColor,
                         borderWidth: 1
                     }]
                 },
                 options: {
                     responsive: true,
                     scales: {
-                        y: { beginAtZero: true, ticks: { color: 'var(--muted)' } },
-                        x: { ticks: { color: 'var(--muted)' } }
+                        y: { 
+                            beginAtZero: true, 
+                            ticks: { color: textColor },
+                            grid: { color: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' } 
+                        },
+                        x: { 
+                            ticks: { color: textColor },
+                            grid: { color: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' } 
+                        }
+                    },
+                    plugins: {
+                        legend: { labels: { color: textColor } }
                     }
                 }
             });
@@ -1319,8 +1967,8 @@
                     datasets: [{
                         label: 'Total de Empenhos',
                         data: hourData,
-                        borderColor: 'var(--warning)',
-                        backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                        borderColor: warningColor,
+                        backgroundColor: `${warningColor}33`,
                         tension: 0.2,
                         fill: true
                     }]
@@ -1328,70 +1976,96 @@
                 options: {
                     responsive: true,
                     scales: {
-                        y: { beginAtZero: true, ticks: { color: 'var(--muted)' } },
-                        x: { ticks: { color: 'var(--muted)' } }
+                        y: { 
+                            beginAtZero: true, 
+                            ticks: { color: textColor },
+                            grid: { color: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' } 
+                        },
+                        x: { 
+                            ticks: { color: textColor },
+                            grid: { color: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' } 
+                        }
+                    },
+                    plugins: {
+                        legend: { labels: { color: textColor } }
                     }
                 }
             });
         }
         
+        /**
+         * Gera e exibe as estatísticas de desempenho (Tempo Médio de Empenho).
+         */
         function generatePerformanceStats() {
             const container = document.getElementById('performanceStats');
             container.innerHTML = '';
 
-            let allVtrs = [];
-            session.selectedUnits.forEach(uk => {
-                const unitName = units[uk];
-                unitsData[uk]?.vtrs.forEach(vtr => {
-                    if (vtr.empenhos.length > 0) {
-                        
-                        const vtrStats = {
-                            id: vtr.id,
-                            unit: unitName,
-                            unitKey: uk,
-                            vtrIndex: unitsData[uk].vtrs.findIndex(item => item.id === vtr.id),
-                            totalEmpenhos: vtr.empenhos.length,
-                            totalTempoMins: 0,
-                            empenhosFinalizados: 0,
-                            lastJ: vtr.empenhos[vtr.empenhos.length - 1].j
-                        };
-                        
-                        let durations = [];
-                        vtr.empenhos.forEach((empenho, index) => {
-                            if (index > 0) {
-                                const prevTime = new Date(vtr.empenhos[index - 1].time).getTime();
-                                const currentTime = new Date(empenho.time).getTime();
-                                const durationMins = Math.floor((currentTime - prevTime) / 60000);
-                                durations.push(durationMins);
-                                vtrStats.totalTempoMins += durationMins;
-                            }
-                        });
+            const allVtrs = getAllVtrs(); // Reune todos os dados
+            let allVtrStats = [];
+            let totalEmpenhosFinalizados = 0;
+            let totalTempo = 0;
+            
+            allVtrs.forEach(vtr => {
+                if (vtr.empenhos.length > 0) {
+                    
+                    const vtrStats = {
+                        id: vtr.id,
+                        unit: vtr.unitName,
+                        unitKey: vtr.unitKey,
+                        status: vtr.status,
+                        totalEmpenhos: vtr.empenhos.length,
+                        totalTempoMins: 0,
+                        empenhosFinalizados: 0,
+                        lastJ: vtr.empenhos[vtr.empenhos.length - 1].j,
+                        mediaTempoMins: 0,
+                        // Para viaturas ativas, tenta encontrar o índice para o modal de detalhes
+                        vtrIndex: vtr.status === 'ATIVA' ? unitsData[vtr.unitKey].vtrs.findIndex(item => item.id === vtr.id) : null 
+                    };
+                    
+                    let totalDurationMins = 0;
+                    let finishedEmpenhosCount = 0;
 
-                        vtrStats.empenhosFinalizados = durations.length;
-                        vtrStats.mediaTempoMins = vtrStats.empenhosFinalizados > 0 
-                            ? Math.round(vtrStats.totalTempoMins / vtrStats.empenhosFinalizados) 
-                            : 0;
+                    // Itera sobre os empenhos para calcular a duração entre eles
+                    for (let i = 1; i < vtr.empenhos.length; i++) {
+                        const prevEmpenho = vtr.empenhos[i - 1];
+                        const currentEmpenho = vtr.empenhos[i];
 
-                        allVtrs.push(vtrStats);
+                        const startTime = new Date(prevEmpenho.time).getTime();
+                        const endTime = new Date(currentEmpenho.time).getTime();
+                        const durationMins = Math.floor((endTime - startTime) / 60000);
+                        
+                        totalDurationMins += durationMins;
+                        finishedEmpenhosCount++;
                     }
-                });
+
+                    vtrStats.empenhosFinalizados = finishedEmpenhosCount;
+                    vtrStats.totalTempoMins = totalDurationMins;
+                    vtrStats.mediaTempoMins = finishedEmpenhosCount > 0 
+                        ? Math.round(totalDurationMins / finishedEmpenhosCount) 
+                        : 0;
+
+                    totalEmpenhosFinalizados += finishedEmpenhosCount;
+                    totalTempo += totalDurationMins;
+
+                    allVtrStats.push(vtrStats);
+                }
             });
 
-            if (allVtrs.length === 0) {
+            if (allVtrStats.length === 0) {
                 container.innerHTML = '<p class="small" style="padding:20px;text-align:center;">Nenhuma viatura com empenhos registrados para gerar o relatório de desempenho.</p>';
                 return;
             }
 
-            // Exibição do resumo geral
-            const totalEmpenhosFinalizados = allVtrs.reduce((sum, v) => sum + v.empenhosFinalizados, 0);
-            const totalTempo = allVtrs.reduce((sum, v) => sum + v.totalTempoMins, 0);
             const mediaGeral = totalEmpenhosFinalizados > 0 ? Math.round(totalTempo / totalEmpenhosFinalizados) : 0;
+
+            // Filtra apenas as ativas para a tabela de detalhes, o resumo é TOTAL
+            const activeVtrsPerformance = allVtrStats.filter(v => v.status === 'ATIVA');
 
 
             let performanceHtml = `
                 <div class="card" style="margin-bottom:12px;display:flex;gap:16px;justify-content:space-around;">
                     <div style="text-align:center;">
-                        <div class="stat-label">Total de Empenhos Finalizados</div>
+                        <div class="stat-label">Total de Empenhos Finalizados (Sessão)</div>
                         <div class="stat-value" style="font-size:24px;color:var(--success);">${totalEmpenhosFinalizados}</div>
                     </div>
                     <div style="text-align:center;">
@@ -1400,45 +2074,55 @@
                     </div>
                 </div>
 
-                <h3>Desempenho Individual das Viaturas Ativas</h3>
-                <table class="performance-table" style="width:100%;border-collapse:collapse;text-align:left;">
+                <h3>Desempenho Individual das Viaturas Ativas no Controle</h3>
+                ${activeVtrsPerformance.length > 0 ? `
+                <table class="performance-table" style="width:100%;">
                     <thead>
                         <tr>
                             <th>Viatura</th>
                             <th>Unidade</th>
-                            <th>Total J's</th>
+                            <th>J's Finalizados</th>
                             <th>J Atual</th>
                             <th>Média Tempo (min)</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${allVtrs.map(vtr => `
+                        ${activeVtrsPerformance.map(vtr => `
                             <tr style="cursor:pointer;" title="Clique para ver os detalhes" onclick="openVtrDetailsModal('${vtr.unitKey}', ${vtr.vtrIndex})">
                                 <td style="font-weight:600;">🚔 ${vtr.id}</td>
-                                <td style="font-size:13px;color:var(--muted);">${vtr.unit}</td>
-                                <td>${vtr.totalEmpenhos}</td>
+                                <td style="font-size:13px;color:var(--text-muted);">${vtr.unit}</td>
+                                <td>${vtr.empenhosFinalizados}</td>
                                 <td style="font-weight:600;color:var(--warning);">${vtr.lastJ}</td>
-                                <td style="color:${vtr.mediaTempoMins > 0 ? 'var(--accent)' : 'var(--muted)'};">${vtr.mediaTempoMins}m</td>
+                                <td style="color:${vtr.mediaTempoMins > 0 ? 'var(--accent)' : 'var(--text-muted)'};">${vtr.mediaTempoMins}m</td>
                                 <td><button class="small ghost" onclick="event.stopPropagation(); openVtrDetailsModal('${vtr.unitKey}', ${vtr.vtrIndex})">Ver Histórico</button></td>
                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
+                ` : '<p class="small" style="text-align:center;padding:10px;">Nenhuma viatura ativa no controle para exibir desempenho individual.</p>'}
             `;
 
             container.innerHTML = performanceHtml;
         }
 
-        // NOVO: Modal de detalhes da VTR
+        // Modal de detalhes da VTR ATIVA
         function openVtrDetailsModal(unitKey, vtrIndex) {
             const modal = document.getElementById('vtrDetailsModal');
             const title = document.getElementById('vtrDetailsModalTitle');
             const content = document.getElementById('vtrDetailsModalContent');
             content.innerHTML = '';
             
-            const vtr = unitsData[unitKey].vtrs[vtrIndex];
-            title.textContent = `Histórico Detalhado: 🚔 ${vtr.id} (${units[unitKey]})`;
+            let vtr = unitsData[unitKey].vtrs[vtrIndex];
+            
+            if (!vtr) {
+                 content.innerHTML = '<p class="small" style="text-align:center;padding:20px;">Detalhes da viatura não encontrados.</p>';
+                 modal.classList.add('active');
+                 return;
+            }
+
+            title.textContent = `Histórico Detalhado (ATIVA): 🚔 ${vtr.id} (${units[unitKey]})`;
+
 
             const headerHtml = `
                 <div style="margin-bottom:15px; background:rgba(6,182,212,0.1); padding:15px; border-radius:8px;">
@@ -1463,16 +2147,16 @@
                     itemDiv.className = 'empenho-history-item';
                     
                     const time = new Date(empenho.time).toLocaleString('pt-BR');
-                    const isLast = index === 0;
                     
                     let durationHtml = '';
-                    if (empenho.j !== 'J11' && index < vtr.empenhos.length - 1) {
-                         // Calcula a duração do J anterior até este J atual (se não for o último)
+                    // Se não for o empenho mais recente (primeiro do array reverso)
+                    if (index < vtr.empenhos.length - 1) {
+                         // O próximo empenho cronológico é o anterior no array reverso
                          const nextEmpenho = vtr.empenhos[vtr.empenhos.length - 2 - index];
                          const duration = timeDifference(empenho.time, nextEmpenho.time);
-                         durationHtml = `<span style="margin-left:15px; font-weight:600; color:var(--success);">Duração até o próximo J: ${duration}</span>`;
-                    } else if (isLast) {
-                        // Calcula a duração do J atual até agora
+                         durationHtml = `<span style="margin-left:15px; font-weight:600; color:var(--success);">Duração: ${duration}</span>`;
+                    } else if (index === 0) {
+                        // Se for o último empenho (mais recente), mostra a duração atual
                         const duration = timeDifference(empenho.time);
                          durationHtml = `<span style="margin-left:15px; font-weight:600; color:var(--warning);">Duração Atual: ${duration}</span>`;
                     }
@@ -1507,22 +2191,22 @@
             const searchProtocol = document.getElementById('searchProtocol').value.toLowerCase().trim();
             
             const empenhosComDados = [];
+            
+            // Reune dados de todas as viaturas (Ativas, de Unidades Removidas e Excluídas)
+            const allVtrs = getAllVtrs();
 
-            session.selectedUnits.forEach(uk => {
-                const unitName = units[uk];
-                unitsData[uk]?.vtrs.forEach(vtr => {
-                    vtr.empenhos.forEach(empenho => {
-                        if (empenho.protocol || empenho.actions) {
-                            empenhosComDados.push({
-                                unit: unitName,
-                                vtrId: vtr.id,
-                                j: empenho.j,
-                                protocol: empenho.protocol,
-                                actions: empenho.actions,
-                                time: empenho.time
-                            });
-                        }
-                    });
+            allVtrs.forEach(vtr => {
+                vtr.empenhos.forEach(empenho => {
+                    if (empenho.protocol || empenho.actions) {
+                        empenhosComDados.push({
+                            unit: vtr.unitName,
+                            vtrId: vtr.id,
+                            j: empenho.j,
+                            protocol: empenho.protocol,
+                            actions: empenho.actions,
+                            time: empenho.time
+                        });
+                    }
                 });
             });
 
@@ -1545,20 +2229,20 @@
                 
                 const protocolHtml = item.protocol 
                     ? `<span class="occurrence-protocol">Protocolo: ${item.protocol}</span>`
-                    : '<span class="occurrence-protocol" style="background:rgba(255,255,255,0.05);color:var(--muted)">Sem Protocolo</span>';
+                    : '<span class="occurrence-protocol" style="background:var(--glass);color:var(--text-muted)">Sem Protocolo</span>';
 
                 itemDiv.innerHTML = `
                     <div class="occurrence-header">
                         <div>
                             <div class="occurrence-vtr">🚔 ${item.vtrId} (${item.unit})</div>
-                            <div class="small" style="color:var(--muted);margin-top:2px;">${new Date(item.time).toLocaleString('pt-BR')}</div>
+                            <div class="small" style="color:var(--text-muted);margin-top:2px;">${new Date(item.time).toLocaleString('pt-BR')}</div>
                         </div>
                         ${protocolHtml}
                     </div>
                     <div class="occurrence-j">${item.j}: ${getJText(item.j).split(': ')[1]}</div>
                     <div class="occurrence-actions">
                         <strong>Ações Empregadas:</strong> 
-                        ${item.actions || '<em style="color:var(--muted)">Nenhuma ação detalhada registrada.</em>'}
+                        ${item.actions || '<em style="color:var(--text-muted)">Nenhuma ação detalhada registrada.</em>'}
                     </div>
                 `;
                 container.appendChild(itemDiv);
@@ -1569,7 +2253,7 @@
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
             document.getElementById(`tab-${tabId}`).classList.add('active');
-            document.querySelector(`.tab[onclick="switchTab('${tabId}')"`).classList.add('active');
+            document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
             
             if (tabId === 'charts') {
                 drawCharts();
@@ -1580,25 +2264,27 @@
             }
         }
         
-        // ====== Funções de Exportação (CSV e PDF) (Mantidas) ======
+        // ====== Funções de Exportação (CSV e PDF) ======
 
         function getFullEmpenhoData() {
             let data = [];
-            session.selectedUnits.forEach(uk => {
-                const unitName = units[uk];
-                unitsData[uk]?.vtrs.forEach(vtr => {
-                    vtr.empenhos.forEach(empenho => {
-                        data.push({
-                            'ID_SESSAO': session.id,
-                            'UNIDADE': unitName,
-                            'ID_VTR': vtr.id,
-                            'SERVICO_VTR': vtr.service,
-                            'J': empenho.j,
-                            'DESCRICAO_J': getJText(empenho.j).split(': ')[1],
-                            'HORA_INICIO': new Date(empenho.time).toLocaleString('pt-BR'),
-                            'PROTOCOLO': empenho.protocol || '',
-                            'ACOES_EMPREGADAS': empenho.actions ? empenho.actions.replace(/(\r\n|\n|\r)/gm, " ").trim() : ''
-                        });
+            
+            // Reune dados de todas as viaturas (Ativas, de Unidades Removidas e Excluídas)
+            const allVtrs = getAllVtrs();
+
+            allVtrs.forEach(vtr => {
+                vtr.empenhos.forEach(empenho => {
+                    data.push({
+                        'ID_SESSAO': session.id,
+                        'UNIDADE': vtr.unitName,
+                        'STATUS_CONTROLE': vtr.status, // Adiciona o status da VTR
+                        'ID_VTR': vtr.id,
+                        'SERVICO_VTR': vtr.service,
+                        'J': empenho.j,
+                        'DESCRICAO_J': getJText(empenho.j).split(': ')[1],
+                        'HORA_INICIO': new Date(empenho.time).toLocaleString('pt-BR'),
+                        'PROTOCOLO': empenho.protocol || '',
+                        'ACOES_EMPREGADAS': empenho.actions ? empenho.actions.replace(/(\r\n|\n|\r)/gm, " ").trim() : ''
                     });
                 });
             });
@@ -1664,13 +2350,14 @@
             
             const totalVtrs = document.querySelector('[onclick="openDetailsModal(\'total\')"] .stat-value').textContent;
             const activeVtrs = document.querySelector('[onclick="openDetailsModal(\'active\')"] .stat-value').textContent;
-            doc.text(`Viaturas Total: ${totalVtrs} | Viaturas Ativas: ${activeVtrs}`, 10, y);
+            doc.text(`Viaturas Total (Sessão): ${totalVtrs} | Viaturas Ativas (Controle): ${activeVtrs}`, 10, y);
             y += 10;
             
             const empenhoData = getFullEmpenhoData();
             const tableColumns = [
                 { header: 'ID VTR', dataKey: 'ID_VTR' },
                 { header: 'Unidade', dataKey: 'UNIDADE' },
+                { header: 'Status', dataKey: 'STATUS_CONTROLE' }, 
                 { header: 'J', dataKey: 'J' },
                 { header: 'Início', dataKey: 'HORA_INICIO' },
                 { header: 'Protocolo', dataKey: 'PROTOCOLO' },
@@ -1687,12 +2374,15 @@
                 startY: y,
                 head: [tableColumns.map(c => c.header)],
                 body: tableRows,
-                styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+                styles: { fontSize: 7, cellPadding: 2, overflow: 'linebreak' },
                 headStyles: { fillColor: [6, 182, 212] },
                 margin: { top: 10, left: 10, right: 10 },
                 columnStyles: {
-                    4: { cellWidth: 30 }, 
-                    5: { cellWidth: 50 }  
+                    0: { cellWidth: 20 },
+                    2: { cellWidth: 15 },
+                    4: { cellWidth: 20 },
+                    5: { cellWidth: 25 }, 
+                    6: { cellWidth: 40 }  
                 }
             });
 
