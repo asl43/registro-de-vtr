@@ -354,20 +354,20 @@
             margin-bottom: 25px;
         }
 
-        /* Estilo para a tabela de desempenho */
-        .performance-table {
+        /* Estilo para a tabela de desempenho/serviço */
+        .performance-table, .service-table {
             width: 100%;
             border-collapse: collapse;
             text-align: left;
         }
-        .performance-table th, .performance-table td {
+        .performance-table th, .performance-table td, .service-table th, .service-table td {
             padding: 10px 12px;
             border-bottom: 1px solid var(--border-color);
         }
-        .performance-table th {
+        .performance-table th, .service-table th {
             background: var(--glass);
         }
-        .performance-table tr:hover {
+        .performance-table tr:hover, .service-table tr:hover {
             background: var(--glass);
         }
 
@@ -742,6 +742,7 @@
                 <div class="tabs">
                     <button class="tab active" onclick="switchTab('charts')">📈 Gráficos</button>
                     <button class="tab" onclick="switchTab('performance')">⏱️ Desempenho</button>
+                    <button class="tab" onclick="switchTab('service_unit')">🚔 Serviço/Unidade</button> 
                     <button class="tab" onclick="switchTab('occurrences')">🚨 Ocorrências</button>
                 </div>
 
@@ -760,6 +761,10 @@
                     <div id="performanceStats"></div>
                 </div>
                 
+                <div class="tab-content" id="tab-service_unit">
+                     <div id="serviceUnitStats"></div>
+                </div>
+
                 <div class="tab-content" id="tab-occurrences">
                     <div class="search-box" style="margin-bottom:15px;">
                         <input type="text" id="searchProtocol" placeholder="🔍 Buscar por número de Protocolo..." oninput="generateOcurrenceList()" />
@@ -798,6 +803,8 @@
             'ROCAM': 'ROCAM','CHOQUE': 'CHOQUE','MARTE': 'MARTE','RPMON': 'RPMON','CIPCÃES': 'CIPCÃES',
             'COE': 'COE','BPAMB': 'BPAMB','CECOPOM': 'CECOPOM','GRAER': 'GRAER','BPG': 'BPG','NPPM': 'NPPM'
         };
+
+        const serviceTypes = ['ORDINARIO', 'SEG', 'POG', 'OPERAÇÃO'];
 
         const empenhosJ = [
             {value:'J1',text:'J1: Atividade Fim'},{value:'J2',text:'J2: Atividade administrativa'},
@@ -1278,20 +1285,20 @@
             // 1. Viaturas Ativas
             Object.keys(unitsData).forEach(uk => {
                 unitsData[uk]?.vtrs.forEach(vtr => {
-                    allVtrs.push({...vtr, unitName: units[uk], status: 'ATIVA'});
+                    allVtrs.push({...vtr, unitName: units[uk], unitKey: uk, status: 'ATIVA'});
                 });
             });
 
             // 2. Viaturas de Unidades Removidas
             Object.keys(removedUnitsData).forEach(uk => {
                 removedUnitsData[uk]?.vtrs.forEach(vtr => {
-                    allVtrs.push({...vtr, unitName: units[uk], status: 'UNIDADE_REMOVIDA'});
+                    allVtrs.push({...vtr, unitName: units[uk], unitKey: uk, status: 'UNIDADE_REMOVIDA'});
                 });
             });
             
             // 3. Viaturas Excluídas Individualmente
             vtrHistoryData.forEach(vtr => {
-                allVtrs.push({...vtr, unitName: units[vtr.unitKey], status: 'VTR_EXCLUIDA'});
+                allVtrs.push({...vtr, unitName: units[vtr.unitKey], unitKey: vtr.unitKey, status: 'VTR_EXCLUIDA'});
             });
 
             return allVtrs;
@@ -1870,7 +1877,8 @@
             switchTab('charts');
             generateStatistics();
             drawCharts();
-            generatePerformanceStats(); // Roda a função de desempenho
+            generatePerformanceStats();
+            generateServiceUnitStats(); // NOVO: Chama a função da nova estatística
             generateOcurrenceList();
         }
 
@@ -2106,6 +2114,123 @@
             container.innerHTML = performanceHtml;
         }
 
+        /**
+         * NOVO: Gera e exibe o quantitativo de viaturas por tipo de serviço e unidade.
+         */
+        function generateServiceUnitStats() {
+            const container = document.getElementById('serviceUnitStats');
+            container.innerHTML = '';
+
+            const allVtrs = getAllVtrs(); // Reune todos os dados (ativas + históricas)
+            const stats = {};
+            const unitKeys = new Set();
+            let totalVtrs = 0;
+
+            // 1. Coleta e consolida os dados
+            allVtrs.forEach(vtr => {
+                const unitKey = vtr.unitKey;
+                const service = vtr.service;
+                unitKeys.add(unitKey);
+                totalVtrs++;
+
+                if (!stats[unitKey]) {
+                    stats[unitKey] = {
+                        name: vtr.unitName,
+                        total: 0,
+                        services: {
+                            'ORDINARIO': 0, 'SEG': 0, 'POG': 0, 'OPERAÇÃO': 0
+                        }
+                    };
+                }
+                
+                stats[unitKey].total++;
+                if (stats[unitKey].services.hasOwnProperty(service)) {
+                    stats[unitKey].services[service]++;
+                } else {
+                     // Caso haja um serviço diferente no histórico, contabiliza em "OUTRO"
+                    stats[unitKey].services['OUTRO'] = (stats[unitKey].services['OUTRO'] || 0) + 1;
+                }
+            });
+
+            const sortedUnitKeys = Array.from(unitKeys).sort((a, b) => units[a].localeCompare(units[b]));
+            
+            if (totalVtrs === 0) {
+                 container.innerHTML = '<p class="small" style="padding:20px;text-align:center;">Nenhuma viatura registrada na sessão para gerar esta estatística.</p>';
+                 return;
+            }
+
+            // 2. Constrói a tabela HTML
+            let tableHtml = `
+                <h3 style="margin-bottom:12px;">Quantitativo Total de Viaturas por Tipo de Serviço (Sessão Completa: Ativas e Históricas)</h3>
+                <div class="card" style="margin-bottom:16px; text-align:center;">
+                    <div class="stat-label">Total de Viaturas Registradas na Sessão</div>
+                    <div class="stat-value">${totalVtrs}</div>
+                </div>
+
+                <table class="service-table">
+                    <thead>
+                        <tr>
+                            <th>Unidade</th>
+                            <th>ORDINÁRIO</th>
+                            <th>SEG</th>
+                            <th>POG</th>
+                            <th>OPERAÇÃO</th>
+                            <th>OUTROS</th>
+                            <th>Total VTRs (Unidade)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            let grandTotal = {
+                ORDINARIO: 0, SEG: 0, POG: 0, OPERAÇÃO: 0, OUTRO: 0, TOTAL: 0
+            };
+
+            sortedUnitKeys.forEach(uk => {
+                const unitStats = stats[uk];
+                const services = unitStats.services;
+
+                grandTotal.ORDINARIO += services.ORDINARIO;
+                grandTotal.SEG += services.SEG;
+                grandTotal.POG += services.POG;
+                grandTotal.OPERAÇÃO += services.OPERAÇÃO;
+                grandTotal.OUTRO += services.OUTRO || 0;
+                grandTotal.TOTAL += unitStats.total;
+
+                tableHtml += `
+                    <tr>
+                        <td style="font-weight:600;">${unitStats.name}</td>
+                        <td>${services.ORDINARIO || 0}</td>
+                        <td>${services.SEG || 0}</td>
+                        <td>${services.POG || 0}</td>
+                        <td>${services.OPERAÇÃO || 0}</td>
+                        <td>${services.OUTRO || 0}</td>
+                        <td style="font-weight:700; color:var(--accent);">${unitStats.total}</td>
+                    </tr>
+                `;
+            });
+            
+            // Linha de Total Geral
+            tableHtml += `
+                    </tbody>
+                    <tfoot>
+                        <tr style="border-top: 2px solid var(--accent); background: var(--glass); font-weight: 700;">
+                            <td>Total Geral:</td>
+                            <td>${grandTotal.ORDINARIO}</td>
+                            <td>${grandTotal.SEG}</td>
+                            <td>${grandTotal.POG}</td>
+                            <td>${grandTotal.OPERAÇÃO}</td>
+                            <td>${grandTotal.OUTRO}</td>
+                            <td style="color:var(--danger);">${grandTotal.TOTAL}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            `;
+            
+            container.innerHTML = tableHtml;
+        }
+
+
         // Modal de detalhes da VTR ATIVA
         function openVtrDetailsModal(unitKey, vtrIndex) {
             const modal = document.getElementById('vtrDetailsModal');
@@ -2259,6 +2384,8 @@
                 drawCharts();
             } else if (tabId === 'performance') {
                 generatePerformanceStats();
+            } else if (tabId === 'service_unit') { // NOVO
+                generateServiceUnitStats();
             } else if (tabId === 'occurrences') { 
                 generateOcurrenceList();
             }
