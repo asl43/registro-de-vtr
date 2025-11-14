@@ -167,6 +167,15 @@
             font-weight: 600;
             margin-top: 10px;
         }
+
+        /* Estilo para o modal de adicionar unidades */
+        #unitsToAddContainer {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 10px;
+        }
         
         @media (max-width:700px){.row{flex-direction:column}.dashboard-grid{grid-template-columns:1fr}}
     </style>
@@ -213,6 +222,7 @@
                         <div class="chip" style="margin-left:8px">📅 <strong id="dtSummary"></strong></div>
                     </div>
                     <div style="display:flex;gap:8px;flex-wrap:wrap">
+                        <button id="openAddUnitBtn" class="ghost small" onclick="openAddUnitModal()">+ Unidade</button> 
                         <button id="exportPdf" class="ghost small">📄 PDF</button>
                         <button id="exportCsv" class="ghost small">📊 CSV</button>
                         <button id="saveLocal" class="success small">💾 Salvar</button>
@@ -243,6 +253,25 @@
 
             <div class="units-grid" id="unitsContainer"></div>
         </section>
+
+        <div class="modal" id="addUnitModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">Adicionar Unidades ao Controle</div>
+                    <button class="modal-close" onclick="closeAddUnitModal()">×</button>
+                </div>
+                
+                <p class="small">Selecione as unidades que deseja incluir na sua sessão de controle.</p>
+
+                <div class="multi-select" id="unitsToAddContainer">
+                    </div>
+
+                <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:8px">
+                    <button class="ghost" onclick="closeAddUnitModal()">Cancelar</button>
+                    <button id="addUnitsBtn" class="success" onclick="addSelectedUnits()">Adicionar Unidades</button>
+                </div>
+            </div>
+        </div>
 
         <div class="modal" id="vtrModal">
             <div class="modal-content">
@@ -515,6 +544,17 @@
             }
         }
 
+        function loadFilterUnits() {
+            const filterUnit = document.getElementById('filterUnit');
+            filterUnit.innerHTML = '<option value="">Todas as Unidades</option>';
+            session.selectedUnits.forEach(uk=>{
+                const opt = document.createElement('option');
+                opt.value = uk;
+                opt.textContent = units[uk];
+                filterUnit.appendChild(opt);
+            });
+        }
+
         function loadFromLocal() {
             const savedSession = localStorage.getItem('currentSession');
             if (savedSession) {
@@ -524,6 +564,7 @@
 
                 document.getElementById('operatorName').value = session.operator;
                 document.getElementById('dateTime').value = session.datetime.slice(0,16);
+                // Marca as unidades na tela 1, caso o usuário volte
                 session.selectedUnits.forEach(uk => {
                     const cb = document.getElementById(`unit_${uk}`);
                     if (cb) cb.checked = true;
@@ -533,14 +574,7 @@
                     document.getElementById('opSummary').textContent = session.operator;
                     document.getElementById('dtSummary').textContent = new Date(session.datetime).toLocaleString('pt-BR');
                     
-                    const filterUnit = document.getElementById('filterUnit');
-                    filterUnit.innerHTML = '<option value="">Todas as Unidades</option>';
-                    session.selectedUnits.forEach(uk=>{
-                        const opt = document.createElement('option');
-                        opt.value = uk;
-                        opt.textContent = units[uk];
-                        filterUnit.appendChild(opt);
-                    });
+                    loadFilterUnits(); // Carrega o filtro com as unidades salvas
 
                     document.getElementById('screen1').style.display = 'none';
                     document.getElementById('screen2').style.display = 'block';
@@ -585,14 +619,7 @@
             document.getElementById('opSummary').textContent = op;
             document.getElementById('dtSummary').textContent = new Date(dt).toLocaleString('pt-BR');
 
-            const filterUnit = document.getElementById('filterUnit');
-            filterUnit.innerHTML = '<option value="">Todas as Unidades</option>';
-            selected.forEach(uk=>{
-                const opt = document.createElement('option');
-                opt.value = uk;
-                opt.textContent = units[uk];
-                filterUnit.appendChild(opt);
-            });
+            loadFilterUnits(); // Carrega o filtro
 
             document.getElementById('screen1').style.display = 'none';
             document.getElementById('screen2').style.display = 'block';
@@ -602,8 +629,60 @@
             startTimers();
             saveToLocal();
         });
+        
+        // ====== Funcionalidade de Adicionar Unidades (NOVO) ======
+        function openAddUnitModal() {
+            const modal = document.getElementById('addUnitModal');
+            const container = document.getElementById('unitsToAddContainer');
+            container.innerHTML = '';
+            
+            const unitsNotSelected = Object.keys(units).filter(k => !session.selectedUnits.includes(k));
 
-        // ====== Função para Finalizar Sessão ======
+            if (unitsNotSelected.length === 0) {
+                container.innerHTML = '<p class="small" style="text-align:center;padding:10px;">Todas as unidades estão ativas.</p>';
+                document.getElementById('addUnitsBtn').disabled = true;
+            } else {
+                document.getElementById('addUnitsBtn').disabled = false;
+                unitsNotSelected.forEach(k => {
+                    const v = units[k];
+                    const div = document.createElement('div');
+                    div.className = 'unit-checkbox';
+                    div.innerHTML = `<input type="checkbox" id="add_unit_${k}" value="${k}"><label for="add_unit_${k}">${v}</label>`;
+                    container.appendChild(div);
+                });
+            }
+
+            modal.classList.add('active');
+        }
+
+        function closeAddUnitModal() {
+            document.getElementById('addUnitModal').classList.remove('active');
+        }
+
+        function addSelectedUnits() {
+            const selected = Array.from(document.querySelectorAll('#unitsToAddContainer input:checked')).map(cb => cb.value);
+
+            if (selected.length === 0) {
+                alert('Selecione pelo menos uma unidade para adicionar.');
+                return;
+            }
+
+            selected.forEach(uk => {
+                if (!session.selectedUnits.includes(uk)) {
+                    session.selectedUnits.push(uk);
+                    unitsData[uk] = { vtrs: [] };
+                }
+            });
+
+            closeAddUnitModal();
+            loadFilterUnits(); // Atualiza o filtro de unidades
+            renderUnits(); // Re-renderiza a tela
+            updateDashboard(); // Atualiza estatísticas
+            saveToLocal();
+            alert(`${selected.length} unidade(s) adicionada(s) com sucesso!`);
+        }
+
+        // ====== Função para Finalizar Sessão (Mantido) ======
         document.getElementById('finishBtn').addEventListener('click', finishSession);
 
         function finishSession() {
@@ -934,7 +1013,7 @@
             saveToLocal();
         }
 
-        // ====== NOVO: Empenho Rápido ======
+        // ====== Empenho Rápido (Mantido) ======
         document.getElementById('openQuickEmpenhoBtn').addEventListener('click', openQuickEmpenhoModal);
 
         function openQuickEmpenhoModal() {
@@ -1018,7 +1097,7 @@
             vtr.empenhos.push(newEmpenho);
         }
 
-        // ====== Renderização e Filtro - MAIS COMPACTO ======
+        // ====== Renderização e Filtro (Mantido) ======
         function renderUnits(){
             const container = document.getElementById('unitsContainer');
             container.innerHTML = '';
@@ -1074,7 +1153,7 @@
                         </div>
                     `;
 
-                    // NOVO HTML COMPACTO
+                    // HTML COMPACTO
                     vtrItem.innerHTML = `
                         <div class="vtr-info">
                             <div class="vtr-id">🚔 ${vtr.id}</div>
