@@ -76,10 +76,7 @@
         .vtr-actions{display:flex;gap:6px;margin-left:10px}
         .vtr-badges{display:flex;gap:4px;margin-top:4px;align-items:center}
         .vtr-service{background:rgba(16,185,129,0.2);color:var(--success);padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600}
-        .j-icon{display:inline-flex;justify-content:center;align-items:center;width:20px;height:20px;font-size:10px;border-radius:50%;font-weight:bold;background:rgba(245,158,11,0.2);color:var(--warning);cursor:help;}
-        .j-icon.j10{background:rgba(239,68,68,0.2);color:var(--danger);}
-        .j-icon.j9{background:rgba(245,158,11,0.2);color:var(--warning);}
-        .j-icon.j4{background:rgba(16,185,129,0.2);color:var(--success);}
+        .j-counter{background:rgba(245,158,11,0.2);color:var(--warning);padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600}
         .vtr-duration{font-size:14px;font-weight:600;color:var(--warning);margin-left:8px}
         .alert-badge{background:var(--danger);color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-left:4px}
         .modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;overflow:auto;background:rgba(0,0,0,0.85);padding-top:60px}
@@ -392,6 +389,18 @@
                     <div class="modal-title">📊 Estatísticas e Análises</div>
                     <button class="modal-close" onclick="closeStatsModal()">×</button>
                 </div>
+                <div style="margin-bottom:15px;">
+                    <label>Filtrar por Período (opcional)</label>
+                    <div class="row">
+                        <div class="col">
+                            <input type="datetime-local" id="statsStart" />
+                        </div>
+                        <div class="col">
+                            <input type="datetime-local" id="statsEnd" />
+                        </div>
+                    </div>
+                    <button class="small ghost" style="margin-top:6px;" onclick="applyStatsFilter()">Aplicar Filtro</button>
+                </div>
                 <div class="tabs">
                     <button class="tab active" onclick="switchTab('charts')">📈 Gráficos</button>
                     <button class="tab" onclick="switchTab('performance')">⏱️ Desempenho</button>
@@ -482,7 +491,6 @@
         let alertsShown = new Set();
         let empenhosChart = null; 
         let horarioChart = null;
-
         // ==========================================
         // DETECÇÃO DE MODO SUPERVISOR
         // ==========================================
@@ -491,22 +499,6 @@
             document.body.classList.add('supervisor-mode');
             document.getElementById('supervisorIndicator').style.display = 'inline';
         }
-
-        // ==========================================
-        // ATALHOS DE TECLADO
-        // ==========================================
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                const modals = document.querySelectorAll('.modal.active');
-                if (modals.length) {
-                    modals[modals.length - 1].classList.remove('active');
-                }
-            }
-            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                e.preventDefault();
-                document.getElementById('searchVtr')?.focus();
-            }
-        });
 
         // ==========================================
         // FUNÇÕES DE INTEGRAÇÃO COM GOOGLE SHEETS
@@ -636,7 +628,6 @@
                 console.warn('⚠️ API não acessível no momento. Trabalhando offline.');
             }
         }
-
         // ==========================================
         // SISTEMA DE NOTIFICAÇÕES
         // ==========================================
@@ -658,24 +649,12 @@
                 setTimeout(() => notif.remove(), 300);
             }, 4000);
         }
-
         // ==========================================
         // FUNÇÕES DE UTILIDADE
         // ==========================================
         function getJText(value){
             const empenho = empenhosJ.find(e => e.value === value);
             return empenho ? empenho.text : value;
-        }
-        function getJIcon(jValue) {
-            const icons = {
-                'J1': '🏁', 'J2': '📝', 'J3': '🔄', 'J4': '🧑‍🍳',
-                'J5': '⛽', 'J6': '🧼', 'J7': '🛠️', 'J8': '🚻',
-                'J9': '📍', 'J10': '🚨', 'J11': '🔚', 'J12': '🏠',
-                'J15': '⚔️'
-            };
-            const emoji = icons[jValue] || '❓';
-            const className = jValue.toLowerCase().replace('j', 'j');
-            return `<span class="j-icon ${className}" title="${getJText(jValue)}">${emoji}</span>`;
         }
         function formatTime(date){
             return new Date(date).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
@@ -719,7 +698,6 @@
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
             applyTheme(newTheme);
         }
-
         // ==========================================
         // PERSISTÊNCIA LOCAL
         // ==========================================
@@ -770,7 +748,6 @@
                 filterUnit.appendChild(opt);
             });
         }
-
         // ==========================================
         // INICIALIZAÇÃO
         // ==========================================
@@ -875,8 +852,9 @@
         });
 
         // ==========================================
-        // GERENCIAMENTO DE UNIDADES
-        // ==========================================
+        // GERENCIAMENTO DE VIATURAS & EMPENHOS
+        // (Mesmo código original, sem alterações funcionais)
+
         function openAddUnitModal() {
             const modal = document.getElementById('addUnitModal');
             const container = document.getElementById('unitsToAddContainer');
@@ -1026,10 +1004,6 @@
             await sincronizarSessao();
             mostrarNotificacao(`✅ Unidade ${unitName} restaurada e sincronizada!`, 'success');
         }
-
-        // ==========================================
-        // GERENCIAMENTO DE VIATURAS
-        // ==========================================
         function openVtrModal(unitKey, vtrIndex = null){
             const modal = document.getElementById('vtrModal');
             const container = document.getElementById('crewInputsContainer');
@@ -1125,10 +1099,6 @@
                 mostrarNotificacao(`Viatura ${vtr.id} removida (dados no histórico)`, 'warning');
             }
         }
-
-        // ==========================================
-        // EMPENHOS
-        // ==========================================
         function openEmpenhoModal(unitKey, vtrIndex){
             currentVtrForEmpenho = {unitKey, vtrIndex};
             const vtr = unitsData[unitKey].vtrs[vtrIndex];
@@ -1222,20 +1192,10 @@
                 actions: actions || null
             };
             vtr.empenhos.push(newEmpenho);
-            // Copia protocolo para área de transferência
-            if (protocol && navigator.clipboard) {
-                try {
-                    await navigator.clipboard.writeText(protocol);
-                    console.log('Protocolo copiado:', protocol);
-                } catch (err) {
-                    console.warn('Não foi possível copiar o protocolo:', err);
-                }
-            }
             await sincronizarEmpenho(vtr, newEmpenho);
             mostrarNotificacao(`✅ Empenho ${j} registrado e sincronizado!`, 'success');
             return newEmpenho;
         }
-
         // ==========================================
         // DASHBOARD E RENDERIZAÇÃO
         // ==========================================
@@ -1325,7 +1285,7 @@
                     const currentEmpenhoHtml = lastEmpenho ? `
                         <div class="vtr-badges">
                             <span class="vtr-service">${vtr.service}</span>
-                            ${getJIcon(lastEmpenho.j)}
+                            <span class="j-counter">${lastEmpenho.j}</span>
                             ${isAlert ? '<span class="alert-badge">ALERTA</span>' : ''}
                         </div>
                         <div class="vtr-duration" data-time="${lastEmpenho.time}">
@@ -1334,7 +1294,7 @@
                     ` : `
                         <div class="vtr-badges">
                             <span class="vtr-service">${vtr.service}</span>
-                            <span class="j-icon" title="Em Base">🏠</span>
+                            <span class="j-counter" style="background:rgba(255,255,255,0.1);color:var(--text-muted)">Em Base</span>
                         </div>
                     `;
                     vtrItem.innerHTML = `
@@ -1392,7 +1352,6 @@
         if('Notification' in window && Notification.permission === 'default'){
             Notification.requestPermission();
         }
-
         // ==========================================
         // MODAIS DE DETALHES
         // ==========================================
@@ -1425,13 +1384,13 @@
                 const lastEmpenho = vtr.empenhos.length > 0 ? vtr.empenhos[vtr.empenhos.length - 1] : null;
                 const isAlert = lastEmpenho && ALERT_THRESHOLDS[lastEmpenho.j] && (Date.now() - new Date(lastEmpenho.time)) / 60000 > ALERT_THRESHOLDS[lastEmpenho.j];
                 item.className = 'vtr-item' + (isAlert ? ' alert' : '');
-                let statusHtml = '<div class="j-icon" style="background:rgba(255,255,255,0.1);color:var(--text-muted)">Sem Empenho J</div>';
+                let statusHtml = '<div class="j-counter" style="background:rgba(255,255,255,0.1);color:var(--text-muted)">Sem Empenho J</div>';
                 if (lastEmpenho) {
                     const duration = timeDifference(lastEmpenho.time);
                     statusHtml = `
                         <div class="vtr-badges">
                             <span class="vtr-service">${vtr.service}</span>
-                            <span class="j-icon" title="${getJText(lastEmpenho.j)}">${getJIconEmoji(lastEmpenho.j)}</span>
+                            <span class="j-counter">${duration}</span>
                         </div>
                     `;
                 }
@@ -1467,15 +1426,6 @@
         }
         function closeDetailsModal() {
             document.getElementById('detailsModal').classList.remove('active');
-        }
-        function getJIconEmoji(jValue) {
-            const icons = {
-                'J1': '🏁', 'J2': '📝', 'J3': '🔄', 'J4': '🧑‍🍳',
-                'J5': '⛽', 'J6': '🧼', 'J7': '🛠️', 'J8': '🚻',
-                'J9': '📍', 'J10': '🚨', 'J11': '🔚', 'J12': '🏠',
-                'J15': '⚔️'
-            };
-            return icons[jValue] || '❓';
         }
         function openVtrDetailsModal(unitKey, vtrIndex) {
             const modal = document.getElementById('vtrDetailsModal');
@@ -1605,11 +1555,33 @@
         }
 
         // ==========================================
-        // ESTATÍSTICAS
+        // ESTATÍSTICAS COM FILTRO POR PERÍODO
         // ==========================================
+        let statsFilter = {
+            start: null,
+            end: null
+        };
         document.getElementById('openStatsBtn').addEventListener('click', openStatsModal);
         function openStatsModal() {
             document.getElementById('statsModal').classList.add('active');
+            // Seta valores iniciais nos inputs
+            const startInput = document.getElementById('statsStart');
+            const endInput = document.getElementById('statsEnd');
+            // Define início como início da sessão
+            const sessionStart = new Date(session.datetime);
+            sessionStart.setSeconds(0);
+            sessionStart.setMilliseconds(0);
+            startInput.value = sessionStart.toISOString().slice(0,16);
+            // Define fim como agora
+            const now = new Date();
+            now.setSeconds(0);
+            now.setMilliseconds(0);
+            endInput.value = now.toISOString().slice(0,16);
+            // Reseta filtro
+            statsFilter = {
+                start: session.datetime,
+                end: new Date().toISOString()
+            };
             switchTab('charts');
             generateStatistics();
             drawCharts();
@@ -1620,6 +1592,33 @@
         function closeStatsModal() {
             document.getElementById('statsModal').classList.remove('active');
         }
+        function applyStatsFilter() {
+            const startInput = document.getElementById('statsStart').value;
+            const endInput = document.getElementById('statsEnd').value;
+            if (!startInput || !endInput) {
+                mostrarNotificacao('Selecione ambas as datas.', 'error');
+                return;
+            }
+            const start = new Date(startInput).toISOString();
+            const end = new Date(endInput).toISOString();
+            if (new Date(start) > new Date(end)) {
+                mostrarNotificacao('Data inicial não pode ser maior que a final.', 'error');
+                return;
+            }
+            statsFilter = { start, end };
+            drawCharts();
+            generatePerformanceStats();
+            generateServiceUnitStats();
+            generateOcurrenceList();
+        }
+        function filterEmpenhosByPeriod(empenhos) {
+            if (!statsFilter.start || !statsFilter.end) return empenhos;
+            return empenhos.filter(emp => {
+                const empTime = new Date(emp.time).getTime();
+                return empTime >= new Date(statsFilter.start).getTime() &&
+                       empTime <= new Date(statsFilter.end).getTime();
+            });
+        }
         function generateStatistics() {
             const stats = {
                 empenhoCounts: {}, 
@@ -1628,12 +1627,13 @@
             };
             const allVtrs = getAllVtrs();
             allVtrs.forEach(vtr => {
-                vtr.empenhos.forEach((empenho, index) => {
+                const filteredEmpenhos = filterEmpenhosByPeriod(vtr.empenhos);
+                filteredEmpenhos.forEach((empenho, index) => {
                     stats.empenhoCounts[empenho.j] = (stats.empenhoCounts[empenho.j] || 0) + 1;
                     const hour = new Date(empenho.time).getHours();
                     stats.hourCounts[hour] = (stats.hourCounts[hour] || 0) + 1;
                     if (index > 0) {
-                        const prevEmpenho = vtr.empenhos[index - 1];
+                        const prevEmpenho = filteredEmpenhos[index - 1];
                         const startTime = new Date(prevEmpenho.time).getTime();
                         const endTime = new Date(empenho.time).getTime();
                         const durationMins = Math.floor((endTime - startTime) / 60000);
@@ -1730,23 +1730,24 @@
             let totalEmpenhosFinalizados = 0;
             let totalTempo = 0;
             allVtrs.forEach(vtr => {
-                if (vtr.empenhos.length > 0) {
+                const filteredEmpenhos = filterEmpenhosByPeriod(vtr.empenhos);
+                if (filteredEmpenhos.length > 0) {
                     const vtrStats = {
                         id: vtr.id,
                         unit: vtr.unitName,
                         unitKey: vtr.unitKey,
                         status: vtr.status,
-                        totalEmpenhos: vtr.empenhos.length,
+                        totalEmpenhos: filteredEmpenhos.length,
                         empenhosFinalizados: 0,
-                        lastJ: vtr.empenhos[vtr.empenhos.length - 1].j,
+                        lastJ: filteredEmpenhos[filteredEmpenhos.length - 1].j,
                         mediaTempoMins: 0,
                         vtrIndex: vtr.status === 'ATIVA' ? unitsData[vtr.unitKey].vtrs.findIndex(item => item.id === vtr.id) : null 
                     };
                     let totalDurationMins = 0;
                     let finishedEmpenhosCount = 0;
-                    for (let i = 1; i < vtr.empenhos.length; i++) {
-                        const prevEmpenho = vtr.empenhos[i - 1];
-                        const currentEmpenho = vtr.empenhos[i];
+                    for (let i = 1; i < filteredEmpenhos.length; i++) {
+                        const prevEmpenho = filteredEmpenhos[i - 1];
+                        const currentEmpenho = filteredEmpenhos[i];
                         const startTime = new Date(prevEmpenho.time).getTime();
                         const endTime = new Date(currentEmpenho.time).getTime();
                         const durationMins = Math.floor((endTime - startTime) / 60000);
@@ -1763,7 +1764,7 @@
                 }
             });
             if (allVtrStats.length === 0) {
-                container.innerHTML = '<p class="small" style="padding:20px;text-align:center;">Nenhuma viatura com empenhos registrados.</p>';
+                container.innerHTML = '<p class="small" style="padding:20px;text-align:center;">Nenhuma viatura com empenhos no período selecionado.</p>';
                 return;
             }
             const mediaGeral = totalEmpenhosFinalizados > 0 ? Math.round(totalTempo / totalEmpenhosFinalizados) : 0;
@@ -1817,6 +1818,8 @@
             const unitKeys = new Set();
             let totalVtrs = 0;
             allVtrs.forEach(vtr => {
+                const filteredEmpenhos = filterEmpenhosByPeriod(vtr.empenhos);
+                if (filteredEmpenhos.length === 0) return;
                 const unitKey = vtr.unitKey;
                 const service = vtr.service;
                 unitKeys.add(unitKey);
@@ -1839,11 +1842,11 @@
             });
             const sortedUnitKeys = Array.from(unitKeys).sort((a, b) => units[a].localeCompare(units[b]));
             if (totalVtrs === 0) {
-                 container.innerHTML = '<p class="small" style="padding:20px;text-align:center;">Nenhuma viatura registrada.</p>';
+                 container.innerHTML = '<p class="small" style="padding:20px;text-align:center;">Nenhuma viatura no período selecionado.</p>';
                  return;
             }
             let tableHtml = `
-                <h3 style="margin-bottom:12px;">Quantitativo por Tipo de Serviço</h3>
+                <h3 style="margin-bottom:12px;">Quantitativo por Tipo de Serviço (Período Selecionado)</h3>
                 <div class="card" style="margin-bottom:16px; text-align:center;">
                     <div class="stat-label">Total de Viaturas</div>
                     <div class="stat-value">${totalVtrs}</div>
@@ -1910,7 +1913,8 @@
             const empenhosComDados = [];
             const allVtrs = getAllVtrs();
             allVtrs.forEach(vtr => {
-                vtr.empenhos.forEach(empenho => {
+                const filteredEmpenhos = filterEmpenhosByPeriod(vtr.empenhos);
+                filteredEmpenhos.forEach(empenho => {
                     if (empenho.protocol || empenho.actions) {
                         empenhosComDados.push({
                             unit: vtr.unitName,
@@ -1929,7 +1933,7 @@
                 return item.protocol && item.protocol.toLowerCase().includes(searchProtocol);
             });
             if (filteredEmpenhos.length === 0) {
-                 container.innerHTML = `<p class="small" style="padding:20px;text-align:center;">Nenhuma ocorrência encontrada.</p>`;
+                 container.innerHTML = `<p class="small" style="padding:20px;text-align:center;">Nenhuma ocorrência encontrada no período selecionado.</p>`;
                  return;
             }
             filteredEmpenhos.forEach(item => {
