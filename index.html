@@ -127,6 +127,13 @@
         .bloco-item{background: var(--glass);border-radius: 8px;padding: 12px;margin-bottom: 10px;border-left: 3px solid var(--accent)}
         .bloco-item .bloco-time{font-size:11px;color:var(--text-muted);margin-bottom:6px}
         .bloco-item .bloco-text{white-space:pre-wrap;word-wrap:break-word;font-size:13px;color:var(--text-primary)}
+        #painelGeralBtn{position:fixed;bottom:0;right:0;width:42px;height:42px;opacity:0;cursor:default;z-index:9997;background:transparent;border:none;padding:0}
+        .painel-operator-card{background:var(--card);border-radius:12px;padding:15px;box-shadow:var(--shadow);margin-bottom:16px}
+        .painel-operator-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border-color)}
+        .painel-operator-title{font-weight:700;font-size:15px;color:var(--accent)}
+        .painel-unit-block{margin-bottom:10px}
+        .painel-unit-name{font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase}
+        .painel-refresh-indicator{font-size:11px;color:var(--text-muted)}
         .theme-icon{font-size: 16px;margin-right: 4px}
         .sync-badge{display:inline-block;background:rgba(16,185,129,0.2);color:var(--success);padding:3px 8px;border-radius:12px;font-size:11px;font-weight:600;margin-left:8px}
         .sync-badge.syncing{background:rgba(245,158,11,0.2);color:var(--warning);animation:pulse 1s infinite}
@@ -499,6 +506,51 @@
                 <div id="vtrDetailsModalContent"></div>
             </div>
         </div>
+        <button id="painelGeralBtn" type="button" aria-hidden="true" tabindex="-1" onclick="openPainelGeral()"></button>
+        <div class="modal" id="painelGeralModal">
+            <div class="modal-content" style="max-width:1100px">
+                <div class="modal-header">
+                    <div class="modal-title">🛰️ Painel Geral — Todos os Operadores</div>
+                    <button class="modal-close" onclick="closePainelGeral()">×</button>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <span class="painel-refresh-indicator" id="painelRefreshInfo">Carregando...</span>
+                    <button class="ghost small" onclick="atualizarPainelGeral()">🔄 Atualizar Agora</button>
+                </div>
+                <div id="painelGeralContent" style="max-height:70vh;overflow-y:auto;"></div>
+            </div>
+        </div>
+        <div class="modal" id="painelEmpenhoModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">Avançar Empenho J (Painel Geral)</div>
+                    <button class="modal-close" onclick="closePainelEmpenhoModal()">×</button>
+                </div>
+                <div class="small" style="margin-bottom:12px;background:rgba(6,182,212,0.1);padding:8px;border-radius:6px">
+                    Viatura: <strong id="painelEmpenhoVtrName"></strong>
+                </div>
+                <div>
+                    <label>Empenho J *</label>
+                    <select id="painelEmpenhoJ"></select>
+                </div>
+                <div style="margin-top:12px">
+                    <label>PRCV (Ponto de Referência)</label>
+                    <input id="painelEmpenhoPrcv" type="text" placeholder="Ex: PRCV 01 - Praça da Saudade (opcional)" />
+                </div>
+                <div style="margin-top:12px">
+                    <label>Número de Protocolo</label>
+                    <input id="painelEmpenhoProtocol" type="text" placeholder="Ex: 2024-12345" />
+                </div>
+                <div style="margin-top:12px">
+                    <label>Ações Empregadas</label>
+                    <textarea id="painelEmpenhoActions" placeholder="Descreva as ações realizadas..."></textarea>
+                </div>
+                <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:8px">
+                    <button class="ghost" onclick="closePainelEmpenhoModal()">Cancelar</button>
+                    <button id="savePainelEmpenhoBtn" class="success">Registrar Empenho</button>
+                </div>
+            </div>
+        </div>
         <div class="modal" id="blocoModal">
             <div class="modal-content" style="max-width:600px">
                 <div class="modal-header">
@@ -526,7 +578,7 @@
         // ==========================================
         // CONFIGURAÇÃO DA API GOOGLE SHEETS
         // ==========================================
-        const API_URL = 'https://script.google.com/macros/s/AKfycbyzxMoLIMI0sGU4MZXY07pKcgXbTEk0My2QRPZwJnlPh37ZFIUKyX8wZx3lffEn5BoRXA/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzuoAX-dIJwtWHEMfqwUo5Ubl2VqzCX71-upoAUfidWHZd5BP2RsgUeWDhbVuu8xg3UrA/exec';
         let API_STATUS = {
             conectado: false,
             ultimaSync: null,
@@ -1453,6 +1505,147 @@
             saveToLocal();
             await sincronizarBloco(vtr, nota);
             mostrarNotificacao(`✅ Anotação adicionada ao Bloco de ${vtr.id} e sincronizada!`, 'success');
+        }
+        // ==========================================
+        // PAINEL GERAL (VISÃO CONSOLIDADA - TODOS OS OPERADORES)
+        // Acessível pelo botão invisível no canto inferior direito.
+        // ==========================================
+        let painelGeralInterval = null;
+        let painelGeralDadosAtuais = null;
+        let painelEmpenhoAlvo = null; // {sessaoId, operator, datetime, vtr}
+        async function openPainelGeral(){
+            document.getElementById('painelGeralModal').classList.add('active');
+            document.getElementById('painelGeralContent').innerHTML = '<p class="small" style="text-align:center;padding:20px;">Carregando dados de todos os operadores...</p>';
+            await atualizarPainelGeral();
+            if(painelGeralInterval) clearInterval(painelGeralInterval);
+            painelGeralInterval = setInterval(atualizarPainelGeral, 15000);
+        }
+        function closePainelGeral(){
+            document.getElementById('painelGeralModal').classList.remove('active');
+            if(painelGeralInterval){
+                clearInterval(painelGeralInterval);
+                painelGeralInterval = null;
+            }
+        }
+        async function atualizarPainelGeral(){
+            const info = document.getElementById('painelRefreshInfo');
+            if(info) info.textContent = '🔄 Atualizando...';
+            const resultado = await enviarParaSheets('BUSCAR_PAINEL_GERAL', {});
+            if(!resultado.sucesso){
+                if(info) info.textContent = '⚠️ Falha ao atualizar. Tentando novamente em 15s...';
+                return;
+            }
+            painelGeralDadosAtuais = resultado.dados;
+            renderPainelGeral(resultado.dados);
+            if(info) info.textContent = `✅ Atualizado às ${new Date().toLocaleTimeString('pt-BR')} — atualiza a cada 15s`;
+        }
+        function renderPainelGeral(dados){
+            const container = document.getElementById('painelGeralContent');
+            const sessoes = dados.sessoes || [];
+            const viaturas = dados.viaturas || [];
+            const ultimosEmpenhos = dados.ultimosEmpenhos || {};
+            if(sessoes.length === 0){
+                container.innerHTML = '<p class="small" style="text-align:center;padding:20px;">Nenhum operador com sessão ativa no momento.</p>';
+                return;
+            }
+            container.innerHTML = '';
+            sessoes.forEach(sessao => {
+                const vtrsDaSessao = viaturas.filter(v => v.sessaoId == sessao.id);
+                const card = document.createElement('div');
+                card.className = 'painel-operator-card';
+                const unidadesSet = [...new Set(vtrsDaSessao.map(v => v.unitName))];
+                let vtrsHtml = '';
+                if(vtrsDaSessao.length === 0){
+                    vtrsHtml = '<p class="small">Nenhuma viatura cadastrada ainda.</p>';
+                } else {
+                    const porUnidade = {};
+                    vtrsDaSessao.forEach(v => {
+                        if(!porUnidade[v.unitName]) porUnidade[v.unitName] = [];
+                        porUnidade[v.unitName].push(v);
+                    });
+                    Object.entries(porUnidade).forEach(([unitName, lista]) => {
+                        vtrsHtml += `<div class="painel-unit-block"><div class="painel-unit-name">${unitName}</div>`;
+                        lista.forEach(v => {
+                            const chave = `${v.sessaoId}|${v.id}`;
+                            const ultimo = ultimosEmpenhos[chave];
+                            const isAlert = ultimo && ALERT_THRESHOLDS[ultimo.j] && (Date.now() - new Date(ultimo.time)) / 60000 > ALERT_THRESHOLDS[ultimo.j];
+                            const statusHtml = ultimo ? `
+                                <span class="j-counter">${ultimo.j}</span>
+                                <span class="vtr-duration">${timeDifference(ultimo.time)}</span>
+                                ${isAlert ? '<span class="alert-badge">ALERTA</span>' : ''}
+                            ` : `<span class="j-counter" style="background:rgba(255,255,255,0.1);color:var(--text-muted)">Em Base</span>`;
+                            vtrsHtml += `
+                                <div class="vtr-item${isAlert ? ' alert' : ''}">
+                                    <div class="vtr-info">
+                                        <div class="vtr-id">🚔 ${v.id}</div>
+                                        <div class="vtr-badges">
+                                            <span class="vtr-service">${v.service}</span>
+                                            ${statusHtml}
+                                        </div>
+                                    </div>
+                                    <div class="vtr-actions">
+                                        <button class="small success" onclick='openPainelEmpenhoModal(${JSON.stringify(String(v.sessaoId))}, ${JSON.stringify(sessao.operator)}, ${JSON.stringify(sessao.datetime)}, ${JSON.stringify(v)})'>J +</button>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        vtrsHtml += `</div>`;
+                    });
+                }
+                card.innerHTML = `
+                    <div class="painel-operator-header">
+                        <div class="painel-operator-title">👤 ${sessao.operator}</div>
+                        <div class="small">Unidades: ${unidadesSet.join(', ') || '-'} • Início: ${new Date(sessao.datetime).toLocaleString('pt-BR')}</div>
+                    </div>
+                    ${vtrsHtml}
+                `;
+                container.appendChild(card);
+            });
+        }
+        function openPainelEmpenhoModal(sessaoId, operator, datetime, vtr){
+            painelEmpenhoAlvo = { sessaoId, operator, datetime, vtr };
+            document.getElementById('painelEmpenhoVtrName').textContent = `${vtr.id} (${vtr.unitName}) — Operador: ${operator}`;
+            document.getElementById('painelEmpenhoJ').value = 'J1';
+            document.getElementById('painelEmpenhoPrcv').value = '';
+            document.getElementById('painelEmpenhoProtocol').value = '';
+            document.getElementById('painelEmpenhoActions').value = '';
+            document.getElementById('painelEmpenhoModal').classList.add('active');
+        }
+        function closePainelEmpenhoModal(){
+            document.getElementById('painelEmpenhoModal').classList.remove('active');
+            painelEmpenhoAlvo = null;
+        }
+        document.getElementById('painelEmpenhoJ') && empenhosJ.forEach(e=>{
+            const opt = document.createElement('option');
+            opt.value = e.value;
+            opt.textContent = e.text;
+            document.getElementById('painelEmpenhoJ').appendChild(opt);
+        });
+        document.getElementById('savePainelEmpenhoBtn').addEventListener('click', savePainelEmpenho);
+        async function savePainelEmpenho(){
+            if(!painelEmpenhoAlvo) return;
+            const { sessaoId, operator, datetime, vtr } = painelEmpenhoAlvo;
+            const j = document.getElementById('painelEmpenhoJ').value;
+            const prcv = document.getElementById('painelEmpenhoPrcv').value.trim();
+            const protocol = document.getElementById('painelEmpenhoProtocol').value.trim();
+            const actions = document.getElementById('painelEmpenhoActions').value.trim();
+            const payload = {
+                sessao: { id: sessaoId, operator: operator, datetime: datetime },
+                vtr: { id: vtr.id, unitName: vtr.unitName, service: vtr.service, status: 'ATIVA' },
+                empenho: {
+                    j,
+                    time: new Date().toISOString(),
+                    protocol: protocol || null,
+                    actions: actions || null,
+                    prcv: prcv || null
+                }
+            };
+            const resultado = await enviarParaSheets('SALVAR_EMPENHO', payload);
+            if(resultado.sucesso){
+                mostrarNotificacao(`✅ Empenho ${j} registrado para ${vtr.id} (via Painel Geral)!`, 'success');
+                closePainelEmpenhoModal();
+                await atualizarPainelGeral();
+            }
         }
         // Considera-se "no local" um empenho ainda em curso para o mesmo protocolo/PRCV,
         // ou seja, cujo último J não seja J11 (Saída do local) nem J12 (Guarnição na base).
