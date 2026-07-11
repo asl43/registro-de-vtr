@@ -73,12 +73,14 @@
         .vtr-item.alert{border-color:var(--danger);animation:pulse-red 1.5s infinite}
         .vtr-info{flex-grow:1}
         .vtr-id{font-weight:600;font-size:15px;color:var(--text-primary)}
-        .vtr-actions{display:flex;gap:6px;margin-left:10px}
+        .vtr-actions{display:flex;gap:6px;margin-left:10px;flex-wrap:wrap}
         .vtr-badges{display:flex;gap:4px;margin-top:4px;align-items:center}
         .vtr-service{background:rgba(16,185,129,0.2);color:var(--success);padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600}
         .j-counter{background:rgba(245,158,11,0.2);color:var(--warning);padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600}
         .vtr-duration{font-size:14px;font-weight:600;color:var(--warning);margin-left:8px}
         .alert-badge{background:var(--danger);color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-left:4px}
+        .vtr-shift{background:rgba(148,163,184,0.2);color:var(--text-muted);padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600}
+        .bloco-badge{background:rgba(6,182,212,0.2);color:var(--accent);padding:1px 6px;border-radius:10px;font-size:10px;font-weight:700;margin-left:6px}
         .modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;overflow:auto;background:rgba(0,0,0,0.85);padding-top:60px}
         .modal.active{display:block}
         .modal-content{background:var(--card);margin:5% auto;padding:20px;border-radius:12px;width:90%;max-width:500px;box-shadow:var(--shadow);transition: background 0.3s}
@@ -122,6 +124,9 @@
         .empenho-history-item pre{white-space: pre-wrap;word-wrap: break-word;padding: 8px;margin-top: 5px;border-radius: 4px;background: rgba(0,0,0,0.2);color: var(--text-primary);font-size: 13px}
         .light-mode .empenho-history-item pre{background: rgba(0,0,0,0.05);color: var(--text-primary)}
         .empenho-history-item strong{color: var(--warning)}
+        .bloco-item{background: var(--glass);border-radius: 8px;padding: 12px;margin-bottom: 10px;border-left: 3px solid var(--accent)}
+        .bloco-item .bloco-time{font-size:11px;color:var(--text-muted);margin-bottom:6px}
+        .bloco-item .bloco-text{white-space:pre-wrap;word-wrap:break-word;font-size:13px;color:var(--text-primary)}
         .theme-icon{font-size: 16px;margin-right: 4px}
         .sync-badge{display:inline-block;background:rgba(16,185,129,0.2);color:var(--success);padding:3px 8px;border-radius:12px;font-size:11px;font-weight:600;margin-left:8px}
         .sync-badge.syncing{background:rgba(245,158,11,0.2);color:var(--warning);animation:pulse 1s infinite}
@@ -142,6 +147,7 @@
         body.supervisor-mode #removeUnitModal,
         body.supervisor-mode #vtrModal,
         body.supervisor-mode #empenhoModal,
+        body.supervisor-mode #blocoModal,
         body.supervisor-mode #quickEmpenhoModal {
             display: none !important;
         }
@@ -302,6 +308,16 @@
                         <option value="OPERAÇÃO">OPERAÇÃO</option>
                     </select>
                 </div>
+                <div class="row" style="margin-top:12px">
+                    <div class="col">
+                        <label>Horário de Início da VTR</label>
+                        <input id="modalVtrStartTime" type="datetime-local" />
+                    </div>
+                    <div class="col">
+                        <label>Horário de Fim da VTR</label>
+                        <input id="modalVtrEndTime" type="datetime-local" />
+                    </div>
+                </div>
                 <div style="margin-top:16px">
                     <h3 style="margin-bottom:12px">Equipe da Viatura (até 5 membros)</h3>
                     <div id="crewInputsContainer"></div>
@@ -438,7 +454,10 @@
                             <input type="datetime-local" id="statsEnd" />
                         </div>
                     </div>
-                    <button class="small ghost" style="margin-top:6px;" onclick="applyStatsFilter()">Aplicar Filtro</button>
+                    <div style="display:flex;gap:8px;margin-top:6px;">
+                        <button class="small ghost" onclick="applyStatsFilter()">Aplicar Filtro</button>
+                        <button class="small success" onclick="salvarEstatisticasNaPlanilha()">☁️ Salvar Estatísticas no Sheets</button>
+                    </div>
                 </div>
                 <div class="tabs">
                     <button class="tab active" onclick="switchTab('charts')">📈 Gráficos</button>
@@ -478,6 +497,28 @@
                     <button class="modal-close" onclick="closeVtrDetailsModal()">×</button>
                 </div>
                 <div id="vtrDetailsModalContent"></div>
+            </div>
+        </div>
+        <div class="modal" id="blocoModal">
+            <div class="modal-content" style="max-width:600px">
+                <div class="modal-header">
+                    <div class="modal-title" id="blocoModalTitle">📋 Bloco de Anotações</div>
+                    <button class="modal-close" onclick="closeBlocoModal()">×</button>
+                </div>
+                <div class="small" style="margin-bottom:12px;background:rgba(6,182,212,0.1);padding:8px;border-radius:6px">
+                    Viatura: <strong id="blocoVtrName"></strong> — anote aqui qualquer informação que a viatura passar (situações, observações, recados). Tudo fica salvo no histórico e sincronizado com o Sheets.
+                </div>
+                <div>
+                    <label>Nova Anotação</label>
+                    <textarea id="blocoNewText" placeholder="Digite a informação passada pela viatura..."></textarea>
+                </div>
+                <div style="margin-top:12px;display:flex;justify-content:flex-end;">
+                    <button id="saveBlocoBtn" class="success small">+ Adicionar ao Bloco</button>
+                </div>
+                <div style="margin-top:16px">
+                    <h3 style="margin-bottom:8px">Histórico de Anotações</h3>
+                    <div id="blocoListContainer" style="max-height:40vh;overflow-y:auto;"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -526,6 +567,7 @@
         let editingVtr = null;
         let currentVtrForEmpenho = null; 
         let quickEmpenhoVtr = null; 
+        let currentVtrForBloco = null;
         let timerInterval = null;
         let alertsShown = new Set();
         let empenhosChart = null; 
@@ -616,6 +658,16 @@
                 }
             });
         }
+        async function sincronizarBloco(vtr, nota) {
+            return await enviarParaSheets('SALVAR_BLOCO', {
+                sessao: session,
+                vtr: {
+                    ...vtr,
+                    unitName: units[vtr.unitKey]
+                },
+                nota: nota
+            });
+        }
         async function finalizarSessaoSheets() {
             const result = await enviarParaSheets('FINALIZAR_SESSAO', {
                 sessaoId: session.id
@@ -639,6 +691,10 @@
                     for (const empenho of vtr.empenhos) {
                         const empResult = await sincronizarEmpenho(vtr, empenho);
                         if (empResult.sucesso) sucessos++; else erros++;
+                    }
+                    for (const nota of (vtr.blocoNotes || [])) {
+                        const notaResult = await sincronizarBloco(vtr, nota);
+                        if (notaResult.sucesso) sucessos++; else erros++;
                     }
                 }
             }
@@ -1135,12 +1191,18 @@
                 document.getElementById('modalVtrId').value = vtr.id;
                 document.getElementById('modalServiceType').value = vtr.service;
                 document.getElementById('modalVtrPhone').value = vtr.phone || '';
+                document.getElementById('modalVtrStartTime').value = vtr.startTime ? vtr.startTime.slice(0,16) : '';
+                document.getElementById('modalVtrEndTime').value = vtr.endTime ? vtr.endTime.slice(0,16) : '';
                 vtr.crew.forEach(member => addCrewInput(member.name, member.rank));
             } else {
                 document.getElementById('modalTitle').textContent = `Adicionar Viatura em ${units[unitKey]}`;
                 document.getElementById('modalVtrId').value = '';
                 document.getElementById('modalServiceType').value = 'ORDINARIO';
                 document.getElementById('modalVtrPhone').value = '';
+                const now = new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                document.getElementById('modalVtrStartTime').value = now.toISOString().slice(0,16);
+                document.getElementById('modalVtrEndTime').value = '';
                 for(let i=0; i<3; i++) addCrewInput(); 
             }
             modal.classList.add('active');
@@ -1180,6 +1242,10 @@
             const id = document.getElementById('modalVtrId').value.trim();
             const service = document.getElementById('modalServiceType').value;
             const phone = document.getElementById('modalVtrPhone').value.trim();
+            const startTimeRaw = document.getElementById('modalVtrStartTime').value;
+            const endTimeRaw = document.getElementById('modalVtrEndTime').value;
+            const startTime = startTimeRaw ? new Date(startTimeRaw).toISOString() : null;
+            const endTime = endTimeRaw ? new Date(endTimeRaw).toISOString() : null;
             const crew = Array.from(document.querySelectorAll('#crewInputsContainer .crew-input-group')).map(group => ({
                 rank: group.querySelector('.crew-rank').value.trim(),
                 name: group.querySelector('.crew-name').value.trim(),
@@ -1188,11 +1254,17 @@
                 mostrarNotificacao('A Identificação da Viatura é obrigatória.', 'error');
                 return;
             }
+            if(startTime && endTime && new Date(endTime) < new Date(startTime)){
+                mostrarNotificacao('O horário de fim não pode ser anterior ao horário de início.', 'error');
+                return;
+            }
+            const isEditing = vtrIndex !== null;
             const newVtr = {
-                id, service, crew, phone, unitKey,
-                empenhos: vtrIndex !== null ? unitsData[unitKey].vtrs[vtrIndex].empenhos : []
+                id, service, crew, phone, unitKey, startTime, endTime,
+                empenhos: isEditing ? unitsData[unitKey].vtrs[vtrIndex].empenhos : [],
+                blocoNotes: isEditing ? (unitsData[unitKey].vtrs[vtrIndex].blocoNotes || []) : []
             };
-            if(vtrIndex !== null){
+            if(isEditing){
                 unitsData[unitKey].vtrs[vtrIndex] = newVtr;
             } else {
                 if(unitsData[unitKey].vtrs.some(v => v.id === id)){
@@ -1206,7 +1278,7 @@
             updateDashboard();
             saveToLocal();
             await sincronizarViatura(newVtr);
-            mostrarNotificacao(`✅ Viatura ${id} salva e sincronizada!`, 'success');
+            mostrarNotificacao(`✅ Viatura ${id} ${isEditing ? 'atualizada' : 'salva'} e sincronizada!`, 'success');
         }
         function deleteVtr(unitKey, vtrIndex){
             const vtr = unitsData[unitKey].vtrs[vtrIndex];
@@ -1332,6 +1404,55 @@
             await sincronizarEmpenho(vtr, newEmpenho);
             mostrarNotificacao(`✅ Empenho ${j} registrado e sincronizado!`, 'success');
             return newEmpenho;
+        }
+        // ==========================================
+        // BLOCO DE ANOTAÇÕES POR VIATURA
+        // ==========================================
+        function openBlocoModal(unitKey, vtrIndex){
+            currentVtrForBloco = {unitKey, vtrIndex};
+            const vtr = unitsData[unitKey].vtrs[vtrIndex];
+            document.getElementById('blocoVtrName').textContent = `${vtr.id} (${units[unitKey]})`;
+            document.getElementById('blocoNewText').value = '';
+            renderBlocoList(vtr);
+            document.getElementById('blocoModal').classList.add('active');
+        }
+        function closeBlocoModal(){
+            document.getElementById('blocoModal').classList.remove('active');
+            currentVtrForBloco = null;
+        }
+        function renderBlocoList(vtr){
+            const container = document.getElementById('blocoListContainer');
+            const notas = vtr.blocoNotes || [];
+            if(notas.length === 0){
+                container.innerHTML = '<p class="small" style="text-align:center;padding:10px;">Nenhuma anotação registrada ainda.</p>';
+                return;
+            }
+            container.innerHTML = notas.slice().reverse().map(n => `
+                <div class="bloco-item">
+                    <div class="bloco-time">🕒 ${new Date(n.time).toLocaleString('pt-BR')}</div>
+                    <div class="bloco-text">${n.text}</div>
+                </div>
+            `).join('');
+        }
+        document.getElementById('saveBlocoBtn').addEventListener('click', saveBlocoNote);
+        async function saveBlocoNote(){
+            if(!currentVtrForBloco) return;
+            const {unitKey, vtrIndex} = currentVtrForBloco;
+            const vtr = unitsData[unitKey].vtrs[vtrIndex];
+            const text = document.getElementById('blocoNewText').value.trim();
+            if(!text){
+                mostrarNotificacao('Digite a informação antes de adicionar ao bloco.', 'error');
+                return;
+            }
+            const nota = { text, time: new Date().toISOString() };
+            if(!vtr.blocoNotes) vtr.blocoNotes = [];
+            vtr.blocoNotes.push(nota);
+            document.getElementById('blocoNewText').value = '';
+            renderBlocoList(vtr);
+            renderUnits();
+            saveToLocal();
+            await sincronizarBloco(vtr, nota);
+            mostrarNotificacao(`✅ Anotação adicionada ao Bloco de ${vtr.id} e sincronizada!`, 'success');
         }
         // Considera-se "no local" um empenho ainda em curso para o mesmo protocolo/PRCV,
         // ou seja, cujo último J não seja J11 (Saída do local) nem J12 (Guarnição na base).
@@ -1489,6 +1610,10 @@
                     const isAlert = lastEmpenho && ALERT_THRESHOLDS[lastEmpenho.j] && (Date.now() - new Date(lastEmpenho.time)) / 60000 > ALERT_THRESHOLDS[lastEmpenho.j];
                     const vtrItem = document.createElement('div');
                     vtrItem.className = 'vtr-item' + (isAlert ? ' alert' : '');
+                    const numBloco = (vtr.blocoNotes || []).length;
+                    const shiftHtml = (vtr.startTime || vtr.endTime) ? `
+                        <div class="vtr-shift">🕒 ${vtr.startTime ? formatTime(vtr.startTime) : '--:--'} — ${vtr.endTime ? formatTime(vtr.endTime) : '--:--'}</div>
+                    ` : '';
                     const currentEmpenhoHtml = lastEmpenho ? `
                         <div class="vtr-badges">
                             <span class="vtr-service">${vtr.service}</span>
@@ -1498,20 +1623,24 @@
                         <div class="vtr-duration" data-time="${lastEmpenho.time}">
                             ${timeDifference(lastEmpenho.time)}
                         </div>
+                        ${shiftHtml}
                     ` : `
                         <div class="vtr-badges">
                             <span class="vtr-service">${vtr.service}</span>
                             <span class="j-counter" style="background:rgba(255,255,255,0.1);color:var(--text-muted)">Em Base</span>
                         </div>
+                        ${shiftHtml}
                     `;
                     vtrItem.innerHTML = `
                         <div class="vtr-info">
-                            <div class="vtr-id">🚔 ${vtr.id}</div>
+                            <div class="vtr-id">🚔 ${vtr.id}${numBloco > 0 ? `<span class="bloco-badge">📋 ${numBloco}</span>` : ''}</div>
                             ${currentEmpenhoHtml}
                         </div>
                         <div class="vtr-actions">
                             <button class="small success" onclick="openEmpenhoModal('${uk}', ${vtrIndex})">J +</button>
                             <button class="small ghost" onclick="openVtrDetailsModal('${uk}', ${vtrIndex})">Detalhes</button>
+                            <button class="small ghost" onclick="openVtrModal('${uk}', ${vtrIndex})">Editar</button>
+                            <button class="small ghost" onclick="openBlocoModal('${uk}', ${vtrIndex})">📋 Bloco</button>
                             <button class="small danger" onclick="deleteVtr('${uk}', ${vtrIndex})">Excluir</button>
                         </div>
                     `;
@@ -1653,6 +1782,9 @@
                         <strong>Serviço:</strong> ${vtr.service} | <strong>Telefone:</strong> ${vtr.phone || 'N/A'}
                     </div>
                     <div class="small" style="margin-top:5px;">
+                        <strong>Horário Programado:</strong> ${vtr.startTime ? new Date(vtr.startTime).toLocaleString('pt-BR') : 'N/A'} até ${vtr.endTime ? new Date(vtr.endTime).toLocaleString('pt-BR') : 'N/A'}
+                    </div>
+                    <div class="small" style="margin-top:5px;">
                         <strong>Tripulação:</strong> ${vtr.crew.map(m => `${m.rank} ${m.name}`).filter(s => s.trim()).join(' / ') || 'Não informada'}
                     </div>
                 </div>
@@ -1691,6 +1823,21 @@
                     content.appendChild(itemDiv);
                 });
             }
+            if ((vtr.blocoNotes || []).length > 0) {
+                const blocoHeader = document.createElement('h3');
+                blocoHeader.style.marginTop = '20px';
+                blocoHeader.textContent = `📋 Bloco de Anotações (${vtr.blocoNotes.length} Registros)`;
+                content.appendChild(blocoHeader);
+                vtr.blocoNotes.slice().reverse().forEach(n => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'bloco-item';
+                    itemDiv.innerHTML = `
+                        <div class="bloco-time">🕒 ${new Date(n.time).toLocaleString('pt-BR')}</div>
+                        <div class="bloco-text">${n.text}</div>
+                    `;
+                    content.appendChild(itemDiv);
+                });
+            }
             modal.classList.add('active');
         }
         function closeVtrDetailsModal() {
@@ -1718,6 +1865,9 @@
                     <h4 style="margin:0; color:var(--accent);">Informações da Viatura</h4>
                     <div class="small" style="margin-top:5px;">
                         <strong>Serviço:</strong> ${vtr.service} | <strong>Unidade:</strong> ${units[unitKey]}
+                    </div>
+                    <div class="small" style="margin-top:5px;">
+                        <strong>Horário Programado:</strong> ${vtr.startTime ? new Date(vtr.startTime).toLocaleString('pt-BR') : 'N/A'} até ${vtr.endTime ? new Date(vtr.endTime).toLocaleString('pt-BR') : 'N/A'}
                     </div>
                     <div class="small" style="margin-top:5px;">
                         <strong>Tripulação:</strong> ${vtr.crew.map(m => `${m.rank} ${m.name}`).filter(s => s.trim()).join(' / ') || 'Não informada'}
@@ -1754,6 +1904,21 @@
                             <div class="small" style="margin-top:5px;"><strong>Ações:</strong></div>
                             <pre>${empenho.actions}</pre>
                         ` : ''}
+                    `;
+                    content.appendChild(itemDiv);
+                });
+            }
+            if ((vtr.blocoNotes || []).length > 0) {
+                const blocoHeader = document.createElement('h3');
+                blocoHeader.style.marginTop = '20px';
+                blocoHeader.textContent = `📋 Bloco de Anotações (${vtr.blocoNotes.length} Registros)`;
+                content.appendChild(blocoHeader);
+                vtr.blocoNotes.slice().reverse().forEach(n => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'bloco-item';
+                    itemDiv.innerHTML = `
+                        <div class="bloco-time">🕒 ${new Date(n.time).toLocaleString('pt-BR')}</div>
+                        <div class="bloco-text">${n.text}</div>
                     `;
                     content.appendChild(itemDiv);
                 });
@@ -2199,6 +2364,43 @@
                 generateServiceUnitStats();
             } else if (tabId === 'occurrences') { 
                 generateOcurrenceList();
+            }
+        }
+        // ==========================================
+        // SALVAR ESTATÍSTICAS NA PLANILHA (SHEETS)
+        // ==========================================
+        async function salvarEstatisticasNaPlanilha() {
+            const stats = generateStatistics();
+            const allVtrs = getAllVtrs();
+            // Monta o quantitativo por serviço/unidade no período filtrado
+            const porUnidade = {};
+            allVtrs.forEach(vtr => {
+                const filtered = filterEmpenhosByPeriod(vtr.empenhos);
+                if (filtered.length === 0) return;
+                if(!porUnidade[vtr.unitName]) porUnidade[vtr.unitName] = 0;
+                porUnidade[vtr.unitName]++;
+            });
+            const topJ = Object.entries(stats.empenhoCounts).sort((a,b)=>b[1]-a[1])[0];
+            const totalEmpenhosPeriodo = Object.values(stats.empenhoCounts).reduce((a,b)=>a+b, 0);
+            const mediaDuracao = stats.durations.length > 0
+                ? Math.round(stats.durations.reduce((a,d)=>a+d.duration,0) / stats.durations.length)
+                : 0;
+            const payload = {
+                sessao: session,
+                periodoInicio: statsFilter.start,
+                periodoFim: statsFilter.end,
+                totalEmpenhos: totalEmpenhosPeriodo,
+                totalVtrs: allVtrs.length,
+                topJ: topJ ? topJ[0] : '',
+                topJCount: topJ ? topJ[1] : 0,
+                mediaDuracaoMinutos: mediaDuracao,
+                empenhoPorJ: JSON.stringify(stats.empenhoCounts),
+                empenhoPorHora: JSON.stringify(stats.hourCounts),
+                empenhoPorUnidade: JSON.stringify(porUnidade)
+            };
+            const resultado = await enviarParaSheets('SALVAR_ESTATISTICAS', payload);
+            if (resultado.sucesso) {
+                mostrarNotificacao('✅ Estatísticas salvas na planilha do Sheets!', 'success');
             }
         }
 
