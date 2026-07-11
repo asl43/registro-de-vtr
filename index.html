@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Mapa da Força — Controle de Unidades</title>
+    <title>Controle de VTR</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://unpkg.com/jspdf-autotable@3.5.20/dist/jspdf.plugin.autotable.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -158,7 +158,7 @@
     <div class="app">
         <header>
             <h1>
-                🚔 Mapa da Força — Controle de Unidades
+                🚔 CONTROLE DE VTR
                 <span class="sync-badge" id="syncStatus">● Verificando...</span>
                 <span id="supervisorIndicator" class="supervisor-indicator" style="display:none;">👁️ Modo Supervisor</span>
             </h1>
@@ -170,6 +170,7 @@
                     ☁️ Sincronizar Agora
                 </button>
                 <button id="openQuickEmpenhoBtn" class="success small">⚡ Empenho Rápido</button>
+                <button id="openPrcvBtn" class="ghost small">📍 PRCVs</button>
                 <button id="openStatsBtn" class="ghost small">📊 Estatísticas</button>
             </div>
         </header>
@@ -330,6 +331,12 @@
                     <select id="modalEmpenhoJ"></select>
                 </div>
                 <div style="margin-top:12px">
+                    <label>PRCV (Ponto de Referência)</label>
+                    <select id="modalPrcv">
+                        <option value="">Nenhum / Não informado</option>
+                    </select>
+                </div>
+                <div style="margin-top:12px">
                     <label>Número de Protocolo</label>
                     <input id="modalProtocol" type="text" placeholder="Ex: 2024-12345" />
                 </div>
@@ -360,6 +367,12 @@
                         <select id="quickModalEmpenhoJ"></select>
                     </div>
                     <div style="margin-top:12px">
+                        <label>PRCV (Ponto de Referência)</label>
+                        <select id="quickModalPrcv">
+                            <option value="">Nenhum / Não informado</option>
+                        </select>
+                    </div>
+                    <div style="margin-top:12px">
                         <label>Número de Protocolo</label>
                         <input id="quickModalProtocol" type="text" placeholder="Ex: 2024-12345" />
                     </div>
@@ -371,6 +384,32 @@
                         <button class="ghost" onclick="closeQuickEmpenhoModal()">Cancelar</button>
                         <button id="saveQuickEmpenhoBtn" class="success">Registrar Empenho</button>
                     </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal" id="prcvModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">📍 Gerenciar PRCVs por Unidade</div>
+                    <button class="modal-close" onclick="closePrcvModal()">×</button>
+                </div>
+                <p class="small">Cadastre os Pontos de Referência (PRCV) de cada unidade. Ao empenhar uma viatura, você poderá selecionar o PRCV, e o sistema alertará se já houver outra viatura empenhada no mesmo local.</p>
+                <div style="margin-top:12px">
+                    <label>Unidade</label>
+                    <select id="prcvUnitSelect"></select>
+                </div>
+                <div style="margin-top:12px">
+                    <label>Novo PRCV</label>
+                    <div class="row" style="margin-bottom:0;">
+                        <div class="col">
+                            <input type="text" id="newPrcvName" placeholder="Ex: PRCV 01 - Praça da Saudade" />
+                        </div>
+                        <button id="addPrcvBtn" class="success small" style="white-space:nowrap;">+ Adicionar</button>
+                    </div>
+                </div>
+                <div style="margin-top:16px">
+                    <h3 style="margin-bottom:8px">PRCVs Cadastrados</h3>
+                    <div id="prcvListContainer"></div>
                 </div>
             </div>
         </div>
@@ -491,6 +530,8 @@
         let alertsShown = new Set();
         let empenhosChart = null; 
         let horarioChart = null;
+        // PRCVs cadastrados por unidade (persistente, independente da sessão)
+        let prcvsPorUnidade = JSON.parse(localStorage.getItem('prcvsPorUnidade') || '{}');
         // ==========================================
         // DETECÇÃO DE MODO SUPERVISOR
         // ==========================================
@@ -786,6 +827,85 @@
                 document.getElementById('finishBtn').style.display = 'none';
             }
         })();
+
+        // ==========================================
+        // GERENCIAMENTO DE PRCVs POR UNIDADE
+        // ==========================================
+        function savePrcvsToLocal(){
+            localStorage.setItem('prcvsPorUnidade', JSON.stringify(prcvsPorUnidade));
+        }
+        document.getElementById('openPrcvBtn').addEventListener('click', openPrcvModal);
+        function openPrcvModal(){
+            const select = document.getElementById('prcvUnitSelect');
+            select.innerHTML = '';
+            Object.entries(units).forEach(([k,v])=>{
+                const opt = document.createElement('option');
+                opt.value = k;
+                opt.textContent = v;
+                select.appendChild(opt);
+            });
+            renderPrcvList();
+            document.getElementById('prcvModal').classList.add('active');
+        }
+        function closePrcvModal(){
+            document.getElementById('prcvModal').classList.remove('active');
+        }
+        document.getElementById('prcvUnitSelect').addEventListener('change', renderPrcvList);
+        function renderPrcvList(){
+            const unitKey = document.getElementById('prcvUnitSelect').value;
+            const container = document.getElementById('prcvListContainer');
+            const list = prcvsPorUnidade[unitKey] || [];
+            if(list.length === 0){
+                container.innerHTML = '<p class="small" style="text-align:center;padding:10px;">Nenhum PRCV cadastrado para esta unidade.</p>';
+                return;
+            }
+            container.innerHTML = list.map((p, idx) => `
+                <div class="vtr-item" style="margin-bottom:8px;">
+                    <div class="vtr-info"><div class="vtr-id" style="font-size:14px;">📍 ${p}</div></div>
+                    <div class="vtr-actions">
+                        <button class="small danger" onclick="removePrcv('${unitKey}', ${idx})">Remover</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        document.getElementById('addPrcvBtn').addEventListener('click', addPrcv);
+        function addPrcv(){
+            const unitKey = document.getElementById('prcvUnitSelect').value;
+            const input = document.getElementById('newPrcvName');
+            const name = input.value.trim();
+            if(!name){
+                mostrarNotificacao('Digite o nome/identificação do PRCV.', 'error');
+                return;
+            }
+            if(!prcvsPorUnidade[unitKey]) prcvsPorUnidade[unitKey] = [];
+            if(prcvsPorUnidade[unitKey].some(p => p.toLowerCase() === name.toLowerCase())){
+                mostrarNotificacao('Este PRCV já está cadastrado para esta unidade.', 'error');
+                return;
+            }
+            prcvsPorUnidade[unitKey].push(name);
+            savePrcvsToLocal();
+            input.value = '';
+            renderPrcvList();
+            mostrarNotificacao(`✅ PRCV "${name}" cadastrado para ${units[unitKey]}.`, 'success');
+        }
+        function removePrcv(unitKey, idx){
+            if(!confirm('Remover este PRCV da lista?')) return;
+            prcvsPorUnidade[unitKey].splice(idx, 1);
+            savePrcvsToLocal();
+            renderPrcvList();
+        }
+        function populatePrcvSelect(selectId, unitKey){
+            const select = document.getElementById(selectId);
+            if(!select) return;
+            select.innerHTML = '<option value="">Nenhum / Não informado</option>';
+            const list = prcvsPorUnidade[unitKey] || [];
+            list.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p;
+                opt.textContent = p;
+                select.appendChild(opt);
+            });
+        }
 
         // ==========================================
         // CONTROLE DE SESSÃO
@@ -1106,6 +1226,7 @@
             document.getElementById('modalEmpenhoJ').value = 'J1'; 
             document.getElementById('modalProtocol').value = '';
             document.getElementById('modalActions').value = '';
+            populatePrcvSelect('modalPrcv', unitKey);
             document.getElementById('empenhoModal').classList.add('active');
         }
         function closeEmpenhoModal(){
@@ -1120,7 +1241,14 @@
             const j = document.getElementById('modalEmpenhoJ').value;
             const protocol = document.getElementById('modalProtocol').value.trim();
             const actions = document.getElementById('modalActions').value.trim();
-            const empenho = await performEmpenho(vtr, j, protocol, actions);
+            const prcv = document.getElementById('modalPrcv').value;
+            if(protocol){
+                await verificarConflitoLocal(protocol, vtr.id, unitKey);
+            }
+            if(prcv){
+                await verificarConflitoPRCV(prcv, vtr.id, unitKey);
+            }
+            const empenho = await performEmpenho(vtr, j, protocol, actions, prcv);
             closeEmpenhoModal();
             renderUnits();
             updateDashboard();
@@ -1157,6 +1285,7 @@
                 `;
                 const lastEmpenho = found.vtr.empenhos[found.vtr.empenhos.length - 1];
                 document.getElementById('quickModalEmpenhoJ').value = (lastEmpenho && lastEmpenho.j !== 'J11') ? lastEmpenho.j : 'J1'; 
+                populatePrcvSelect('quickModalPrcv', found.unitKey);
                 document.getElementById('quickModalProtocol').value = '';
                 document.getElementById('quickModalActions').value = '';
                 formDiv.style.display = 'block';
@@ -1177,24 +1306,102 @@
             const j = document.getElementById('quickModalEmpenhoJ').value;
             const protocol = document.getElementById('quickModalProtocol').value.trim();
             const actions = document.getElementById('quickModalActions').value.trim();
-            await performEmpenho(vtr, j, protocol, actions);
+            const prcv = document.getElementById('quickModalPrcv').value;
+            if(protocol){
+                await verificarConflitoLocal(protocol, vtr.id, quickEmpenhoVtr.unitKey);
+            }
+            if(prcv){
+                await verificarConflitoPRCV(prcv, vtr.id, quickEmpenhoVtr.unitKey);
+            }
+            await performEmpenho(vtr, j, protocol, actions, prcv);
             closeQuickEmpenhoModal();
             renderUnits();
             updateDashboard();
             saveToLocal();
         }
-        async function performEmpenho(vtr, j, protocol, actions) {
+        async function performEmpenho(vtr, j, protocol, actions, prcv) {
             const now = new Date().toISOString();
             const newEmpenho = {
                 j,
                 time: now,
                 protocol: protocol || null,
-                actions: actions || null
+                actions: actions || null,
+                prcv: prcv || null
             };
             vtr.empenhos.push(newEmpenho);
             await sincronizarEmpenho(vtr, newEmpenho);
             mostrarNotificacao(`✅ Empenho ${j} registrado e sincronizado!`, 'success');
             return newEmpenho;
+        }
+        // Considera-se "no local" um empenho ainda em curso para o mesmo protocolo/PRCV,
+        // ou seja, cujo último J não seja J11 (Saída do local) nem J12 (Guarnição na base).
+        const J_ENCERRA_LOCAL = ['J11', 'J12'];
+        function findVtrsNoMesmoLocal(protocol, vtrAtualId, unitKeyAtual){
+            if(!protocol) return [];
+            const protocolNorm = protocol.trim().toLowerCase();
+            if(!protocolNorm) return [];
+            const conflitos = [];
+            Object.keys(unitsData).forEach(uk => {
+                const vtrs = unitsData[uk]?.vtrs || [];
+                vtrs.forEach(vtr => {
+                    if(uk === unitKeyAtual && vtr.id === vtrAtualId) return;
+                    if(!vtr.empenhos || vtr.empenhos.length === 0) return;
+                    const last = vtr.empenhos[vtr.empenhos.length - 1];
+                    if(!last.protocol) return;
+                    if(last.protocol.trim().toLowerCase() !== protocolNorm) return;
+                    if(J_ENCERRA_LOCAL.includes(last.j)) return;
+                    conflitos.push({unitKey: uk, vtr, lastEmpenho: last});
+                });
+            });
+            return conflitos;
+        }
+        async function verificarConflitoLocal(protocol, vtrAtualId, unitKeyAtual){
+            const conflitos = findVtrsNoMesmoLocal(protocol, vtrAtualId, unitKeyAtual);
+            if(conflitos.length === 0) return;
+            for(const conflito of conflitos){
+                const desejaRemover = confirm(
+                    `⚠️ Atenção: a viatura ${conflito.vtr.id} (${units[conflito.unitKey]}) já está empenhada neste local (Protocolo: ${protocol}), atualmente em ${conflito.lastEmpenho.j} - ${getJText(conflito.lastEmpenho.j).split(': ')[1]}.\n\nDeseja remover essa viatura deste local agora (registrar Saída do Local - J11 para ela)?\n\nOK = Sim, remover\nCancelar = Não, manter como está`
+                );
+                if(desejaRemover){
+                    await performEmpenho(conflito.vtr, 'J11', protocol, 'Removida automaticamente do local — novo empenho registrado para outra viatura no mesmo protocolo.', conflito.lastEmpenho.prcv);
+                    mostrarNotificacao(`✅ Viatura ${conflito.vtr.id} removida do local (J11 registrado).`, 'success');
+                } else {
+                    mostrarNotificacao(`⚠️ Viatura ${conflito.vtr.id} permanece empenhada neste local.`, 'warning');
+                }
+            }
+        }
+        // Verificação equivalente, porém baseada no PRCV cadastrado (ponto de referência fixo).
+        function findVtrsNoMesmoPRCV(prcv, vtrAtualId, unitKeyAtual){
+            if(!prcv) return [];
+            const conflitos = [];
+            Object.keys(unitsData).forEach(uk => {
+                const vtrs = unitsData[uk]?.vtrs || [];
+                vtrs.forEach(vtr => {
+                    if(uk === unitKeyAtual && vtr.id === vtrAtualId) return;
+                    if(!vtr.empenhos || vtr.empenhos.length === 0) return;
+                    const last = vtr.empenhos[vtr.empenhos.length - 1];
+                    if(!last.prcv) return;
+                    if(last.prcv !== prcv) return;
+                    if(J_ENCERRA_LOCAL.includes(last.j)) return;
+                    conflitos.push({unitKey: uk, vtr, lastEmpenho: last});
+                });
+            });
+            return conflitos;
+        }
+        async function verificarConflitoPRCV(prcv, vtrAtualId, unitKeyAtual){
+            const conflitos = findVtrsNoMesmoPRCV(prcv, vtrAtualId, unitKeyAtual);
+            if(conflitos.length === 0) return;
+            for(const conflito of conflitos){
+                const desejaRemover = confirm(
+                    `⚠️ Atenção: a viatura ${conflito.vtr.id} (${units[conflito.unitKey]}) já está empenhada no PRCV "${prcv}", atualmente em ${conflito.lastEmpenho.j} - ${getJText(conflito.lastEmpenho.j).split(': ')[1]}.\n\nDeseja remover essa viatura deste PRCV agora (registrar Saída do Local - J11 para ela)?\n\nOK = Sim, remover\nCancelar = Não, manter como está`
+                );
+                if(desejaRemover){
+                    await performEmpenho(conflito.vtr, 'J11', conflito.lastEmpenho.protocol, 'Removida automaticamente do PRCV — novo empenho registrado para outra viatura no mesmo PRCV.', prcv);
+                    mostrarNotificacao(`✅ Viatura ${conflito.vtr.id} removida do PRCV (J11 registrado).`, 'success');
+                } else {
+                    mostrarNotificacao(`⚠️ Viatura ${conflito.vtr.id} permanece empenhada neste PRCV.`, 'warning');
+                }
+            }
         }
         // ==========================================
         // DASHBOARD E RENDERIZAÇÃO
@@ -1474,7 +1681,7 @@
                             ${durationHtml}
                         </div>
                         <div class="small">
-                            Início: ${time} ${empenho.protocol ? `| Protocolo: <strong>${empenho.protocol}</strong>` : ''}
+                            Início: ${time} ${empenho.prcv ? `| PRCV: <strong>${empenho.prcv}</strong>` : ''} ${empenho.protocol ? `| Protocolo: <strong>${empenho.protocol}</strong>` : ''}
                         </div>
                         ${empenho.actions ? `
                             <div class="small" style="margin-top:5px;"><strong>Ações:</strong></div>
@@ -1541,7 +1748,7 @@
                             ${durationHtml}
                         </div>
                         <div class="small">
-                            Início: ${time} ${empenho.protocol ? `| Protocolo: <strong>${empenho.protocol}</strong>` : ''}
+                            Início: ${time} ${empenho.prcv ? `| PRCV: <strong>${empenho.prcv}</strong>` : ''} ${empenho.protocol ? `| Protocolo: <strong>${empenho.protocol}</strong>` : ''}
                         </div>
                         ${empenho.actions ? `
                             <div class="small" style="margin-top:5px;"><strong>Ações:</strong></div>
@@ -1561,6 +1768,7 @@
             start: null,
             end: null
         };
+        let statsPerformanceInterval = null;
         document.getElementById('openStatsBtn').addEventListener('click', openStatsModal);
         function openStatsModal() {
             document.getElementById('statsModal').classList.add('active');
@@ -1591,6 +1799,10 @@
         }
         function closeStatsModal() {
             document.getElementById('statsModal').classList.remove('active');
+            if(statsPerformanceInterval){
+                clearInterval(statsPerformanceInterval);
+                statsPerformanceInterval = null;
+            }
         }
         function applyStatsFilter() {
             const startInput = document.getElementById('statsStart').value;
@@ -1790,20 +2002,26 @@
                             <th>J's Finalizados</th>
                             <th>J Atual</th>
                             <th>Média (min)</th>
+                            <th>Tempo no J Atual</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${activeVtrsPerformance.map(vtr => `
+                        ${activeVtrsPerformance.map(vtr => {
+                            const realVtr = unitsData[vtr.unitKey]?.vtrs[vtr.vtrIndex];
+                            const realLast = realVtr && realVtr.empenhos.length > 0 ? realVtr.empenhos[realVtr.empenhos.length - 1] : null;
+                            const tempoAtual = realLast ? timeDifference(realLast.time) : '-';
+                            return `
                             <tr style="cursor:pointer;" onclick="openVtrDetailsModal('${vtr.unitKey}', ${vtr.vtrIndex})">
                                 <td style="font-weight:600;">🚔 ${vtr.id}</td>
                                 <td style="font-size:13px;">${vtr.unit}</td>
                                 <td>${vtr.empenhosFinalizados}</td>
                                 <td style="font-weight:600;color:var(--warning);">${vtr.lastJ}</td>
                                 <td style="color:var(--accent);">${vtr.mediaTempoMins}m</td>
+                                <td style="color:var(--warning);font-weight:700;">${tempoAtual}</td>
                                 <td><button class="small ghost" onclick="event.stopPropagation(); openVtrDetailsModal('${vtr.unitKey}', ${vtr.vtrIndex})">Ver</button></td>
                             </tr>
-                        `).join('')}
+                        `;}).join('')}
                     </tbody>
                 </table>
                 ` : '<p class="small" style="text-align:center;padding:10px;">Nenhuma viatura ativa.</p>'}
@@ -1915,12 +2133,13 @@
             allVtrs.forEach(vtr => {
                 const filteredEmpenhos = filterEmpenhosByPeriod(vtr.empenhos);
                 filteredEmpenhos.forEach(empenho => {
-                    if (empenho.protocol || empenho.actions) {
+                    if (empenho.protocol || empenho.actions || empenho.prcv) {
                         empenhosComDados.push({
                             unit: vtr.unitName,
                             vtrId: vtr.id,
                             j: empenho.j,
                             protocol: empenho.protocol,
+                            prcv: empenho.prcv,
                             actions: empenho.actions,
                             time: empenho.time
                         });
@@ -1942,13 +2161,16 @@
                 const protocolHtml = item.protocol 
                     ? `<span class="occurrence-protocol">Protocolo: ${item.protocol}</span>`
                     : '<span class="occurrence-protocol" style="background:var(--glass);color:var(--text-muted)">Sem Protocolo</span>';
+                const prcvHtml = item.prcv
+                    ? `<span class="occurrence-protocol" style="margin-left:6px;">📍 ${item.prcv}</span>`
+                    : '';
                 itemDiv.innerHTML = `
                     <div class="occurrence-header">
                         <div>
                             <div class="occurrence-vtr">🚔 ${item.vtrId} (${item.unit})</div>
                             <div class="small" style="color:var(--text-muted);margin-top:2px;">${new Date(item.time).toLocaleString('pt-BR')}</div>
                         </div>
-                        ${protocolHtml}
+                        <div>${protocolHtml}${prcvHtml}</div>
                     </div>
                     <div class="occurrence-j">${item.j}: ${getJText(item.j).split(': ')[1]}</div>
                     <div class="occurrence-actions">
@@ -1964,10 +2186,15 @@
             document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
             document.getElementById(`tab-${tabId}`).classList.add('active');
             document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
+            if(statsPerformanceInterval){
+                clearInterval(statsPerformanceInterval);
+                statsPerformanceInterval = null;
+            }
             if (tabId === 'charts') {
                 drawCharts();
             } else if (tabId === 'performance') {
                 generatePerformanceStats();
+                statsPerformanceInterval = setInterval(generatePerformanceStats, 5000);
             } else if (tabId === 'service_unit') {
                 generateServiceUnitStats();
             } else if (tabId === 'occurrences') { 
@@ -1992,6 +2219,7 @@
                         'J': empenho.j,
                         'DESCRICAO_J': getJText(empenho.j).split(': ')[1],
                         'HORA_INICIO': new Date(empenho.time).toLocaleString('pt-BR'),
+                        'PRCV': empenho.prcv || '',
                         'PROTOCOLO': empenho.protocol || '',
                         'ACOES_EMPREGADAS': empenho.actions ? empenho.actions.replace(/(\r\n|\n|\r)/gm, " ").trim() : ''
                     });
@@ -2023,7 +2251,7 @@
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.setAttribute('href', url);
-            link.setAttribute('download', `Mapa_Forca_${session.id}.csv`);
+            link.setAttribute('download', `Controle_VTR_${session.id}.csv`);
             link.style.visibility = 'hidden';
             document.body.appendChild(link);
             link.click();
@@ -2036,7 +2264,7 @@
             const doc = new jsPDF('p', 'mm', 'a4');
             let y = 10;
             doc.setFontSize(16);
-            doc.text('Relatório do Mapa da Força', 10, y);
+            doc.text('Relatório de Controle de VTR', 10, y);
             y += 8;
             doc.setFontSize(10);
             doc.text(`Operador: ${session.operator}`, 10, y);
@@ -2048,6 +2276,7 @@
                 { header: 'Unidade', dataKey: 'UNIDADE' },
                 { header: 'J', dataKey: 'J' },
                 { header: 'Início', dataKey: 'HORA_INICIO' },
+                { header: 'PRCV', dataKey: 'PRCV' },
                 { header: 'Protocolo', dataKey: 'PROTOCOLO' },
             ];
             const tableRows = empenhoData.map(row => tableColumns.map(col => row[col.dataKey]));
@@ -2058,10 +2287,9 @@
                 styles: { fontSize: 8, cellPadding: 2 },
                 headStyles: { fillColor: [6, 182, 212] },
             });
-            doc.save(`Mapa_Forca_${session.id}.pdf`);
+            doc.save(`Controle_VTR_${session.id}.pdf`);
             mostrarNotificacao('✅ PDF exportado com sucesso!', 'success');
         }
     </script>
 </body>
 </html>
-
