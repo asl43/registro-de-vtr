@@ -71,6 +71,7 @@
         .vtr-list{display:flex;flex-direction:column;gap:10px}
         .vtr-item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;background:var(--glass);border:1px solid var(--border-color);transition: background 0.3s, border-color 0.3s}
         .vtr-item.alert{border-color:var(--danger);animation:pulse-red 1.5s infinite}
+        .vtr-item.shift-end-alert{border-color:var(--warning);animation:pulse-orange 1.5s infinite}
         .vtr-info{flex-grow:1}
         .vtr-id{font-weight:600;font-size:15px;color:var(--text-primary)}
         .vtr-actions{display:flex;gap:6px;margin-left:10px;flex-wrap:wrap}
@@ -79,6 +80,7 @@
         .j-counter{background:rgba(245,158,11,0.2);color:var(--warning);padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600}
         .vtr-duration{font-size:14px;font-weight:600;color:var(--warning);margin-left:8px}
         .alert-badge{background:var(--danger);color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-left:4px}
+        .shift-alert-badge{background:var(--warning);color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-left:4px}
         .vtr-shift{background:rgba(148,163,184,0.2);color:var(--text-muted);padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600}
         .bloco-badge{background:rgba(6,182,212,0.2);color:var(--accent);padding:1px 6px;border-radius:10px;font-size:10px;font-weight:700;margin-left:6px}
         .modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;overflow:auto;background:rgba(0,0,0,0.85);padding-top:60px}
@@ -102,7 +104,7 @@
         .found-vtr{background: rgba(6, 182, 212, 0.1);color: var(--accent);padding: 5px;border-radius: 4px}
         .light-mode .found-vtr{background: rgba(2, 132, 199, 0.1)}
         .vtr-warning{color: var(--danger);font-size: 11px;margin-top: 5px}
-        .tabs{display: flex;border-bottom: 1px solid var(--border-color);margin-bottom: 15px}
+        .tabs{display: flex;border-bottom: 1px solid var(--border-color);margin-bottom: 15px;flex-wrap:wrap}
         .tab{background: none;border: none;padding: 10px 15px;cursor: pointer;color: var(--text-muted);border-bottom: 2px solid transparent;font-weight: 500;transition: all 0.2s}
         .tab:hover{color: var(--text-primary)}
         .tab.active{color: var(--accent);border-bottom-color: var(--accent);font-weight: 600}
@@ -146,6 +148,7 @@
         @keyframes slideIn{from{transform:translateX(400px);opacity:0}to{transform:translateX(0);opacity:1}}
         @keyframes pulse{0%, 100%{opacity:1}50%{opacity:0.5}}
         @keyframes pulse-red{0%{box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4)}70%{box-shadow: 0 0 0 10px rgba(239, 68, 68, 0)}100%{box-shadow: 0 0 0 0 rgba(239, 68, 68, 0)}}
+        @keyframes pulse-orange{0%{box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4)}70%{box-shadow: 0 0 0 10px rgba(245, 158, 11, 0)}100%{box-shadow: 0 0 0 0 rgba(245, 158, 11, 0)}}
         /* Modo Supervisor */
         body.supervisor-mode .vtr-actions,
         body.supervisor-mode #screen2 button.danger,
@@ -315,13 +318,28 @@
                         <option value="OPERAÇÃO">OPERAÇÃO</option>
                     </select>
                 </div>
+                <div id="ordinarioHourGroup" style="margin-top:12px;display:none;">
+                    <label>Horário de Início do Turno (ORDINÁRIO = 12h de serviço)</label>
+                    <select id="modalOrdinarioHour">
+                        <option value="06:00">06:00</option>
+                        <option value="07:00">07:00</option>
+                    </select>
+                </div>
+                <div id="duracaoServicoGroup" style="margin-top:12px;display:none;">
+                    <label>Duração do Serviço</label>
+                    <select id="modalDuracaoServico">
+                        <option value="6">6 horas</option>
+                        <option value="8">8 horas</option>
+                        <option value="12">12 horas</option>
+                    </select>
+                </div>
                 <div class="row" style="margin-top:12px">
                     <div class="col">
                         <label>Horário de Início da VTR</label>
                         <input id="modalVtrStartTime" type="datetime-local" />
                     </div>
                     <div class="col">
-                        <label>Horário de Fim da VTR</label>
+                        <label>Horário de Fim da VTR <span id="modalVtrEndTimeAutoLabel" class="small" style="display:none;">(calculado automaticamente)</span></label>
                         <input id="modalVtrEndTime" type="datetime-local" />
                     </div>
                 </div>
@@ -461,10 +479,12 @@
                             <input type="datetime-local" id="statsEnd" />
                         </div>
                     </div>
-                    <div style="display:flex;gap:8px;margin-top:6px;">
-                        <button class="small ghost" onclick="applyStatsFilter()">Aplicar Filtro</button>
+                    <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;">
+                        <button class="small ghost" onclick="applyStatsFilter()">Aplicar Filtro (Sessão Atual)</button>
+                        <button class="small ghost" onclick="buscarHistoricoAnterior()">📆 Buscar Dias Anteriores (Sheets)</button>
                         <button class="small success" onclick="salvarEstatisticasNaPlanilha()">☁️ Salvar Estatísticas no Sheets</button>
                     </div>
+                    <div id="statsSourceInfo" class="small" style="margin-top:6px;"></div>
                 </div>
                 <div class="tabs">
                     <button class="tab active" onclick="switchTab('charts')">📈 Gráficos</button>
@@ -1245,6 +1265,8 @@
                 document.getElementById('modalVtrPhone').value = vtr.phone || '';
                 document.getElementById('modalVtrStartTime').value = vtr.startTime ? vtr.startTime.slice(0,16) : '';
                 document.getElementById('modalVtrEndTime').value = vtr.endTime ? vtr.endTime.slice(0,16) : '';
+                if(vtr.ordinarioHour) document.getElementById('modalOrdinarioHour').value = vtr.ordinarioHour;
+                if(vtr.duracaoServico) document.getElementById('modalDuracaoServico').value = String(vtr.duracaoServico);
                 vtr.crew.forEach(member => addCrewInput(member.name, member.rank));
             } else {
                 document.getElementById('modalTitle').textContent = `Adicionar Viatura em ${units[unitKey]}`;
@@ -1255,8 +1277,11 @@
                 now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
                 document.getElementById('modalVtrStartTime').value = now.toISOString().slice(0,16);
                 document.getElementById('modalVtrEndTime').value = '';
+                document.getElementById('modalOrdinarioHour').value = '06:00';
+                document.getElementById('modalDuracaoServico').value = '12';
                 for(let i=0; i<3; i++) addCrewInput(); 
             }
+            atualizarCamposServico();
             modal.classList.add('active');
         }
         function closeVtrModal(){
@@ -1288,6 +1313,59 @@
             `;
             container.appendChild(div);
         }
+        // ==========================================
+        // CÁLCULO AUTOMÁTICO DE HORÁRIO POR TIPO DE SERVIÇO
+        // - ORDINARIO: 12h fixas, início às 06:00 ou 07:00 (escolha do operador)
+        // - SEG / POG: duração de 6h, 8h ou 12h a partir do horário de início informado
+        // - OPERAÇÃO: livre, sem duração fixa (fim só é calculado se informado manualmente)
+        // ==========================================
+        document.getElementById('modalServiceType').addEventListener('change', atualizarCamposServico);
+        document.getElementById('modalOrdinarioHour').addEventListener('change', atualizarCamposServico);
+        document.getElementById('modalDuracaoServico').addEventListener('change', atualizarCamposServico);
+        document.getElementById('modalVtrStartTime').addEventListener('change', atualizarCamposServico);
+        function atualizarCamposServico(){
+            const service = document.getElementById('modalServiceType').value;
+            const ordinarioGroup = document.getElementById('ordinarioHourGroup');
+            const duracaoGroup = document.getElementById('duracaoServicoGroup');
+            const endInput = document.getElementById('modalVtrEndTime');
+            const startInput = document.getElementById('modalVtrStartTime');
+            const autoLabel = document.getElementById('modalVtrEndTimeAutoLabel');
+            ordinarioGroup.style.display = 'none';
+            duracaoGroup.style.display = 'none';
+            autoLabel.style.display = 'none';
+            endInput.readOnly = false;
+            if(service === 'ORDINARIO'){
+                ordinarioGroup.style.display = 'block';
+                autoLabel.style.display = 'inline';
+                endInput.readOnly = true;
+                const horaInicio = document.getElementById('modalOrdinarioHour').value || '06:00';
+                // Usa a data já informada em modalVtrStartTime (ou hoje) como referência do dia
+                let dataBase = startInput.value ? new Date(startInput.value) : new Date();
+                const [hh, mm] = horaInicio.split(':').map(Number);
+                dataBase.setHours(hh, mm, 0, 0);
+                startInput.value = formatarParaDatetimeLocal(dataBase);
+                const fim = new Date(dataBase.getTime() + 12 * 60 * 60 * 1000);
+                endInput.value = formatarParaDatetimeLocal(fim);
+            } else if(service === 'SEG' || service === 'POG'){
+                duracaoGroup.style.display = 'block';
+                autoLabel.style.display = 'inline';
+                endInput.readOnly = true;
+                const horas = parseInt(document.getElementById('modalDuracaoServico').value || '12', 10);
+                if(startInput.value){
+                    const inicio = new Date(startInput.value);
+                    const fim = new Date(inicio.getTime() + horas * 60 * 60 * 1000);
+                    endInput.value = formatarParaDatetimeLocal(fim);
+                }
+            } else {
+                // OPERAÇÃO: livre, não mexe no valor de fim já digitado
+                endInput.readOnly = false;
+            }
+        }
+        function formatarParaDatetimeLocal(date){
+            const d = new Date(date);
+            d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+            return d.toISOString().slice(0,16);
+        }
         document.getElementById('saveVtrBtn').addEventListener('click', saveVtr);
         async function saveVtr(){
             const {unitKey, vtrIndex} = editingVtr;
@@ -1298,6 +1376,8 @@
             const endTimeRaw = document.getElementById('modalVtrEndTime').value;
             const startTime = startTimeRaw ? new Date(startTimeRaw).toISOString() : null;
             const endTime = endTimeRaw ? new Date(endTimeRaw).toISOString() : null;
+            const ordinarioHour = service === 'ORDINARIO' ? document.getElementById('modalOrdinarioHour').value : null;
+            const duracaoServico = (service === 'SEG' || service === 'POG') ? parseInt(document.getElementById('modalDuracaoServico').value, 10) : null;
             const crew = Array.from(document.querySelectorAll('#crewInputsContainer .crew-input-group')).map(group => ({
                 rank: group.querySelector('.crew-rank').value.trim(),
                 name: group.querySelector('.crew-name').value.trim(),
@@ -1312,7 +1392,7 @@
             }
             const isEditing = vtrIndex !== null;
             const newVtr = {
-                id, service, crew, phone, unitKey, startTime, endTime,
+                id, service, crew, phone, unitKey, startTime, endTime, ordinarioHour, duracaoServico,
                 empenhos: isEditing ? unitsData[unitKey].vtrs[vtrIndex].empenhos : [],
                 blocoNotes: isEditing ? (unitsData[unitKey].vtrs[vtrIndex].blocoNotes || []) : []
             };
@@ -1801,8 +1881,9 @@
                     unitVtrCount++;
                     const lastEmpenho = vtr.empenhos[vtr.empenhos.length - 1];
                     const isAlert = lastEmpenho && ALERT_THRESHOLDS[lastEmpenho.j] && (Date.now() - new Date(lastEmpenho.time)) / 60000 > ALERT_THRESHOLDS[lastEmpenho.j];
+                    const isShiftEndAlert = vtr.endTime && (Date.now() > new Date(vtr.endTime).getTime());
                     const vtrItem = document.createElement('div');
-                    vtrItem.className = 'vtr-item' + (isAlert ? ' alert' : '');
+                    vtrItem.className = 'vtr-item' + (isAlert ? ' alert' : (isShiftEndAlert ? ' shift-end-alert' : ''));
                     const numBloco = (vtr.blocoNotes || []).length;
                     const shiftHtml = (vtr.startTime || vtr.endTime) ? `
                         <div class="vtr-shift">🕒 ${vtr.startTime ? formatTime(vtr.startTime) : '--:--'} — ${vtr.endTime ? formatTime(vtr.endTime) : '--:--'}</div>
@@ -1812,6 +1893,7 @@
                             <span class="vtr-service">${vtr.service}</span>
                             <span class="j-counter">${lastEmpenho.j}</span>
                             ${isAlert ? '<span class="alert-badge">ALERTA</span>' : ''}
+                            ${isShiftEndAlert ? '<span class="shift-alert-badge">FIM DE TURNO</span>' : ''}
                         </div>
                         <div class="vtr-duration" data-time="${lastEmpenho.time}">
                             ${timeDifference(lastEmpenho.time)}
@@ -1821,6 +1903,7 @@
                         <div class="vtr-badges">
                             <span class="vtr-service">${vtr.service}</span>
                             <span class="j-counter" style="background:rgba(255,255,255,0.1);color:var(--text-muted)">Em Base</span>
+                            ${isShiftEndAlert ? '<span class="shift-alert-badge">FIM DE TURNO</span>' : ''}
                         </div>
                         ${shiftHtml}
                     `;
@@ -1850,6 +1933,7 @@
             timerInterval = setInterval(() => {
                 renderUnits(); 
                 checkTimeAlerts(); 
+                checkShiftEndAlerts();
             }, 5000);
         }
         function checkTimeAlerts(){
@@ -1868,6 +1952,34 @@
                     }
                 });
             });
+        }
+        // Verifica se alguma viatura já ultrapassou o horário de fim do turno
+        // (calculado automaticamente para ORDINARIO/SEG/POG, ou informado manualmente em OPERAÇÃO)
+        // e dispara um alerta avisando que é hora de remover a VTR do controle ou editar seus dados (renovar turno).
+        function checkShiftEndAlerts(){
+            const now = Date.now();
+            session.selectedUnits.forEach(uk=>{
+                const vtrs = unitsData[uk]?.vtrs || [];
+                vtrs.forEach((vtr, idx)=>{
+                    if(!vtr.endTime) return;
+                    const fim = new Date(vtr.endTime).getTime();
+                    if(now < fim) return;
+                    const alertKey = `shiftend-${uk}-${idx}-${vtr.endTime}`;
+                    if(!alertsShown.has(alertKey)){
+                        alertsShown.add(alertKey);
+                        showShiftEndAlert(vtr.id, units[uk]);
+                    }
+                });
+            });
+        }
+        function showShiftEndAlert(vtrId, unitName){
+            if(Notification.permission === 'granted'){
+                new Notification('⏰ Fim de Turno', {
+                    body: `${vtrId} (${unitName}) atingiu o horário de fim do turno. Remova ou edite a viatura.`,
+                    icon: '🚔'
+                });
+            }
+            mostrarNotificacao(`⏰ ${vtrId} (${unitName}) atingiu o fim do turno! Remova a VTR ou edite o horário.`, 'warning');
         }
         function showAlert(vtrId, j, mins){
             if(Notification.permission === 'granted'){
@@ -2127,9 +2239,14 @@
             end: null
         };
         let statsPerformanceInterval = null;
+        let historicoAnteriorAtivo = false; // true quando os dados exibidos vêm do Sheets (dias anteriores), não da sessão local
+        let dadosHistoricoAnterior = null; // cache do último resultado buscado no Sheets
         document.getElementById('openStatsBtn').addEventListener('click', openStatsModal);
         function openStatsModal() {
             document.getElementById('statsModal').classList.add('active');
+            historicoAnteriorAtivo = false;
+            dadosHistoricoAnterior = null;
+            document.getElementById('statsSourceInfo').textContent = '';
             // Seta valores iniciais nos inputs
             const startInput = document.getElementById('statsStart');
             const endInput = document.getElementById('statsEnd');
@@ -2176,10 +2293,47 @@
                 return;
             }
             statsFilter = { start, end };
+            historicoAnteriorAtivo = false;
+            dadosHistoricoAnterior = null;
+            document.getElementById('statsSourceInfo').textContent = '📍 Exibindo dados da sessão atual (local).';
             drawCharts();
             generatePerformanceStats();
             generateServiceUnitStats();
             generateOcurrenceList();
+        }
+        // Busca estatísticas de dias anteriores diretamente do Google Sheets (todas as sessões/operadores),
+        // permitindo visualizar análises de qualquer período já sincronizado, não apenas da sessão local atual.
+        async function buscarHistoricoAnterior() {
+            const startInput = document.getElementById('statsStart').value;
+            const endInput = document.getElementById('statsEnd').value;
+            if (!startInput || !endInput) {
+                mostrarNotificacao('Selecione o período (data inicial e final) para buscar no histórico.', 'error');
+                return;
+            }
+            const start = new Date(startInput).toISOString();
+            const end = new Date(endInput).toISOString();
+            if (new Date(start) > new Date(end)) {
+                mostrarNotificacao('Data inicial não pode ser maior que a final.', 'error');
+                return;
+            }
+            document.getElementById('statsSourceInfo').textContent = '🔄 Buscando dados históricos no Sheets...';
+            const resultado = await enviarParaSheets('BUSCAR_ESTATISTICAS_PERIODO', {
+                periodoInicio: start,
+                periodoFim: end
+            });
+            if (!resultado.sucesso) {
+                document.getElementById('statsSourceInfo').textContent = '⚠️ Falha ao buscar histórico.';
+                return;
+            }
+            dadosHistoricoAnterior = resultado.dados;
+            historicoAnteriorAtivo = true;
+            statsFilter = { start, end };
+            document.getElementById('statsSourceInfo').textContent = `☁️ Exibindo dados históricos do Sheets (${new Date(start).toLocaleDateString('pt-BR')} a ${new Date(end).toLocaleDateString('pt-BR')}) — todos os operadores.`;
+            drawCharts();
+            generatePerformanceStats();
+            generateServiceUnitStats();
+            generateOcurrenceList();
+            mostrarNotificacao('✅ Histórico carregado do Sheets!', 'success');
         }
         function filterEmpenhosByPeriod(empenhos) {
             if (!statsFilter.start || !statsFilter.end) return empenhos;
@@ -2190,6 +2344,13 @@
             });
         }
         function generateStatistics() {
+            if (historicoAnteriorAtivo && dadosHistoricoAnterior) {
+                return {
+                    empenhoCounts: dadosHistoricoAnterior.empenhoPorJ || {},
+                    hourCounts: dadosHistoricoAnterior.empenhoPorHora || {},
+                    durations: dadosHistoricoAnterior.durations || []
+                };
+            }
             const stats = {
                 empenhoCounts: {}, 
                 hourCounts: {},    
@@ -2295,6 +2456,23 @@
         function generatePerformanceStats() {
             const container = document.getElementById('performanceStats');
             container.innerHTML = '';
+            if (historicoAnteriorAtivo && dadosHistoricoAnterior) {
+                const hist = dadosHistoricoAnterior;
+                container.innerHTML = `
+                    <div class="card" style="margin-bottom:12px;display:flex;gap:16px;justify-content:space-around;">
+                        <div style="text-align:center;">
+                            <div class="stat-label">Total de Empenhos no Período</div>
+                            <div class="stat-value" style="font-size:24px;color:var(--success);">${hist.totalEmpenhos || 0}</div>
+                        </div>
+                        <div style="text-align:center;">
+                            <div class="stat-label">Tempo Médio (min)</div>
+                            <div class="stat-value" style="font-size:24px;color:var(--accent);">${hist.mediaDuracaoMinutos || 0}m</div>
+                        </div>
+                    </div>
+                    <p class="small" style="text-align:center;padding:10px;">Desempenho detalhado por viatura ativa está disponível apenas para a sessão atual. Para dias anteriores, consulte a aba "Ocorrências" ou a planilha do Sheets.</p>
+                `;
+                return;
+            }
             const allVtrs = getAllVtrs();
             let allVtrStats = [];
             let totalEmpenhosFinalizados = 0;
@@ -2389,6 +2567,35 @@
         function generateServiceUnitStats() {
             const container = document.getElementById('serviceUnitStats');
             container.innerHTML = '';
+            if (historicoAnteriorAtivo && dadosHistoricoAnterior) {
+                const porUnidade = dadosHistoricoAnterior.empenhoPorUnidade || {};
+                const unitNames = Object.keys(porUnidade).sort();
+                if (unitNames.length === 0) {
+                    container.innerHTML = '<p class="small" style="padding:20px;text-align:center;">Nenhum dado histórico no período selecionado.</p>';
+                    return;
+                }
+                let total = 0;
+                let tableHtml = `
+                    <h3 style="margin-bottom:12px;">Quantitativo por Unidade (Histórico Sheets)</h3>
+                    <table class="service-table">
+                        <thead><tr><th>Unidade</th><th>Total de Empenhos</th></tr></thead>
+                        <tbody>
+                            ${unitNames.map(u => {
+                                total += porUnidade[u];
+                                return `<tr><td style="font-weight:600;">${u}</td><td>${porUnidade[u]}</td></tr>`;
+                            }).join('')}
+                        </tbody>
+                        <tfoot>
+                            <tr style="border-top: 2px solid var(--accent); background: var(--glass); font-weight: 700;">
+                                <td>Total Geral:</td><td style="color:var(--danger);">${total}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    <p class="small" style="margin-top:10px;">Detalhamento por tipo de serviço (ORDINÁRIO/SEG/POG/OPERAÇÃO) não é agregado no histórico do Sheets; disponível apenas para a sessão atual.</p>
+                `;
+                container.innerHTML = tableHtml;
+                return;
+            }
             const allVtrs = getAllVtrs();
             const stats = {};
             const unitKeys = new Set();
@@ -2486,24 +2693,36 @@
             const container = document.getElementById('occurrenceList');
             container.innerHTML = '';
             const searchProtocol = document.getElementById('searchProtocol').value.toLowerCase().trim();
-            const empenhosComDados = [];
-            const allVtrs = getAllVtrs();
-            allVtrs.forEach(vtr => {
-                const filteredEmpenhos = filterEmpenhosByPeriod(vtr.empenhos);
-                filteredEmpenhos.forEach(empenho => {
-                    if (empenho.protocol || empenho.actions || empenho.prcv) {
-                        empenhosComDados.push({
-                            unit: vtr.unitName,
-                            vtrId: vtr.id,
-                            j: empenho.j,
-                            protocol: empenho.protocol,
-                            prcv: empenho.prcv,
-                            actions: empenho.actions,
-                            time: empenho.time
-                        });
-                    }
+            let empenhosComDados = [];
+            if (historicoAnteriorAtivo && dadosHistoricoAnterior) {
+                empenhosComDados = (dadosHistoricoAnterior.ocorrencias || []).map(o => ({
+                    unit: o.unidade,
+                    vtrId: o.vtrId,
+                    j: o.j,
+                    protocol: o.protocolo,
+                    prcv: o.prcv,
+                    actions: o.acoes,
+                    time: o.time
+                }));
+            } else {
+                const allVtrs = getAllVtrs();
+                allVtrs.forEach(vtr => {
+                    const filteredEmpenhos = filterEmpenhosByPeriod(vtr.empenhos);
+                    filteredEmpenhos.forEach(empenho => {
+                        if (empenho.protocol || empenho.actions || empenho.prcv) {
+                            empenhosComDados.push({
+                                unit: vtr.unitName,
+                                vtrId: vtr.id,
+                                j: empenho.j,
+                                protocol: empenho.protocol,
+                                prcv: empenho.prcv,
+                                actions: empenho.actions,
+                                time: empenho.time
+                            });
+                        }
+                    });
                 });
-            });
+            }
             empenhosComDados.sort((a, b) => new Date(b.time) - new Date(a.time));
             const filteredEmpenhos = empenhosComDados.filter(item => {
                 if (!searchProtocol) return true;
@@ -2552,7 +2771,9 @@
                 drawCharts();
             } else if (tabId === 'performance') {
                 generatePerformanceStats();
-                statsPerformanceInterval = setInterval(generatePerformanceStats, 5000);
+                if(!historicoAnteriorAtivo){
+                    statsPerformanceInterval = setInterval(generatePerformanceStats, 5000);
+                }
             } else if (tabId === 'service_unit') {
                 generateServiceUnitStats();
             } else if (tabId === 'occurrences') { 
